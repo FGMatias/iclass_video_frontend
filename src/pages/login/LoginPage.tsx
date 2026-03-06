@@ -1,3 +1,4 @@
+import linesImage from '@/assets/images/lines.jpg'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -134,7 +135,7 @@ export function LoginPage() {
 
       <div className="bg-primary relative hidden overflow-hidden lg:block">
         <img
-          src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80"
+          src={linesImage}
           alt="Oficina moderna con pantallas digitales"
           className="absolute inset-0 h-full w-full object-cover opacity-20"
         />
