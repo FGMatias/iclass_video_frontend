@@ -1,17 +1,14 @@
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import type { ReactNode } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryProvider } from './QueryProvider'
 
-interface AppProvidersProps {
-  children: ReactNode
-}
-
-export function AppProviders({ children }: AppProvidersProps) {
+export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <BrowserRouter>
       <QueryProvider>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="top-right" richColors closeButton />
       </QueryProvider>
     </BrowserRouter>

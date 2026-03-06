@@ -1,10 +1,10 @@
 export const ROLES = {
-  SUPER_ADMINISTRADOR: 1,
-  ADMINISTRADOR_EMPRESA: 2,
-  ADMINISTRADOR_SUCURSAL: 3,
+  SUPER_ADMINISTRADOR: 'SUPER_ADMINISTRADOR',
+  ADMINISTRADOR_EMPRESA: 'ADMINISTRADOR_EMPRESA',
+  ADMINISTRADOR_SUCURSAL: 'ADMINISTRADOR_SUCURSAL',
 } as const
 
-export type RoleId = (typeof ROLES)[keyof typeof ROLES]
+export type RoleName = (typeof ROLES)[keyof typeof ROLES]
 
 export const roleLabels: Record<string, string> = {
   SUPER_ADMINISTRADOR: 'Super Administrador',

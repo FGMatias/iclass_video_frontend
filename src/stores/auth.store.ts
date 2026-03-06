@@ -5,7 +5,7 @@ const USER_KEY = 'iclass_user'
 
 interface AuthState {
   token: string | null
-  user: AuthState | null
+  user: AuthUser | null
 }
 
 type Listener = () => void
