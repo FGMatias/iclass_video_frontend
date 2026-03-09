@@ -17,13 +17,22 @@ import {
   useUpdateUser,
   useUsers,
 } from '@/hooks/queries/useUser'
+import { useAuth } from '@/hooks/useAuth'
 import type { CreateCompanyAdminFormData } from '@/schemas/user.schema'
 import type { UserResponse } from '@/types/user.types'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
+const roleFilterMap: Record<number, number | undefined> = {
+  1: 2,
+  2: 3,
+  3: undefined,
+}
+
 export function UsersPage() {
-  const { data: users = [], isLoading } = useUsers()
+  const { user } = useAuth()
+  const roleFilter = user ? roleFilterMap[user.roleId] : undefined
+  const { data: users = [], isLoading } = useUsers(roleFilter)
   const createUser = useCreateCompanyAdmin()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()

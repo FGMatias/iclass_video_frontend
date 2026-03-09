@@ -5,8 +5,11 @@ import { toast } from 'sonner'
 
 const USERS_KEYS = ['users']
 
-export function useUsers() {
-  return useQuery({ queryKey: USERS_KEYS, queryFn: userService.findAll })
+export function useUsers(roleId?: number) {
+  return useQuery({
+    queryKey: roleId ? [...USERS_KEYS, roleId] : USERS_KEYS,
+    queryFn: () => userService.findAll(roleId),
+  })
 }
 
 export function useCreateCompanyAdmin() {

@@ -2,8 +2,10 @@ import api from '@/lib/axios'
 import { CreateCompanyAdminRequest, UpdateUserRequest, UserResponse } from '@/types/user.types'
 
 export const userService = {
-  findAll: async (): Promise<UserResponse[]> => {
-    const response = await api.get<UserResponse[]>('/user')
+  findAll: async (roleId?: number): Promise<UserResponse[]> => {
+    const response = await api.get<UserResponse[]>('/user', {
+      params: roleId ? { roleId } : undefined,
+    })
     return response.data
   },
 
