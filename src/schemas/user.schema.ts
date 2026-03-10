@@ -8,15 +8,31 @@ export const createCompanyAdminSchema = z.object({
     .max(50, 'El username no debe exceder de 50 caracteres')
     .regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, puntos y guiones'),
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
-  paternalSurname: z.string().max(50).optional(),
-  maternalSurname: z.string().max(50).optional(),
-  documentNumber: z.string().max(20).optional(),
+  paternalSurname: z
+    .string()
+    .max(50)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
+  maternalSurname: z
+    .string()
+    .max(50)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
+  documentNumber: z
+    .string()
+    .max(20)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
   email: z.string().min(1, 'El correo es obligatorio').email('Email inválido'),
   phone: z
     .string()
     .regex(/^[0-9]{9,20}$/, 'Teléfono inválido')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
 })
 
 export type CreateCompanyAdminFormData = z.infer<typeof createCompanyAdminSchema>
@@ -29,15 +45,31 @@ export const updateUserSchema = z.object({
     .regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, puntos y guiones')
     .optional(),
   name: z.string().min(1, 'El nombre es obligatorio').max(100),
-  paternalSurname: z.string().max(50).optional(),
-  maternalSurname: z.string().max(50).optional(),
-  documentNumber: z.string().max(20).optional(),
-  email: z.string().email('Email inválido').optional(),
+  paternalSurname: z
+    .string()
+    .max(50)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
+  maternalSurname: z
+    .string()
+    .max(50)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
+  documentNumber: z
+    .string()
+    .max(20)
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z
     .string()
     .regex(/^[0-9]{9,20}$/, 'Teléfono inválido')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
 })
 
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>

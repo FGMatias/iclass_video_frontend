@@ -1,19 +1,23 @@
 export const ROLES = {
-  SUPER_ADMINISTRADOR: 'SUPER_ADMINISTRADOR',
-  ADMINISTRADOR_EMPRESA: 'ADMINISTRADOR_EMPRESA',
-  ADMINISTRADOR_SUCURSAL: 'ADMINISTRADOR_SUCURSAL',
+  SUPER_ADMINISTRADOR: 1,
+  ADMINISTRADOR_EMPRESA: 2,
+  ADMINISTRADOR_SUCURSAL: 3,
+  VISUALIZADOR: 4,
 } as const
 
-export type RoleName = (typeof ROLES)[keyof typeof ROLES]
+export type RoleId = (typeof ROLES)[keyof typeof ROLES]
 
-export const roleLabels: Record<string, string> = {
-  SUPER_ADMINISTRADOR: 'Super Administrador',
-  ADMINISTRADOR_EMPRESA: 'Administrador Empresa',
-  ADMINISTRADOR_SUCURSAL: 'Administrador Sucursal',
+export const MANAGED_ROLE_BY_USER_ROL: Record<number, number | undefined> = {
+  [ROLES.SUPER_ADMINISTRADOR]: ROLES.ADMINISTRADOR_EMPRESA,
+  [ROLES.ADMINISTRADOR_EMPRESA]: ROLES.ADMINISTRADOR_SUCURSAL,
+  [ROLES.ADMINISTRADOR_SUCURSAL]: undefined,
 }
 
-export const roleBadgeVariants: Record<string, string> = {
-  SUPER_ADMINISTRADOR: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  ADMINISTRADOR_EMPRESA: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  ADMINISTRADOR_SUCURSAL: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+export const ROLE_BADGE_VARIANTS: Record<number, string> = {
+  [ROLES.SUPER_ADMINISTRADOR]:
+    'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100',
+  [ROLES.ADMINISTRADOR_EMPRESA]: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100',
+  [ROLES.ADMINISTRADOR_SUCURSAL]:
+    'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-100',
+  [ROLES.VISUALIZADOR]: 'bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-100',
 }

@@ -1,4 +1,4 @@
-import { UserForm, UserTable } from '@/components/features/usuario'
+import { UserForm, UserTable } from '@/components/features/user'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { MANAGED_ROLE_BY_USER_ROL } from '@/constants/roles'
 import {
   useActivateUser,
   useCreateCompanyAdmin,
@@ -23,15 +24,9 @@ import type { UserResponse } from '@/types/user.types'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 
-const roleFilterMap: Record<number, number | undefined> = {
-  1: 2,
-  2: 3,
-  3: undefined,
-}
-
 export function UsersPage() {
   const { user } = useAuth()
-  const roleFilter = user ? roleFilterMap[user.roleId] : undefined
+  const roleFilter = user ? MANAGED_ROLE_BY_USER_ROL[user.roleId] : undefined
   const { data: users = [], isLoading } = useUsers(roleFilter)
   const createUser = useCreateCompanyAdmin()
   const updateUser = useUpdateUser()
