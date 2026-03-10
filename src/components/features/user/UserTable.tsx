@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { roleBadgeVariants, roleLabels } from '@/constants/roles'
+import { ROLE_BADGE_VARIANTS } from '@/constants/roles'
 import type { UserResponse } from '@/types/user.types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -108,11 +108,16 @@ export function UserTable({
       {
         accessorKey: 'roleName',
         header: 'Rol',
-        cell: ({ getValue }) => {
+        cell: ({ row, getValue }) => {
           const role = getValue() as string
+          const roleId = row.original.roleId
+          console.log({ role, roleId })
           return (
-            <Badge variant="outline" className={roleBadgeVariants[role] ?? ''}>
-              {roleLabels[role] ?? role}
+            <Badge
+              variant="outline"
+              className={ROLE_BADGE_VARIANTS[roleId] ?? 'bg-gray-100 text-gray-800'}
+            >
+              {role}
             </Badge>
           )
         },
