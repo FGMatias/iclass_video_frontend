@@ -12,7 +12,10 @@ export function StatusBadge({
   inactiveLabel = 'Inactivo',
 }: StatusBadgeProps) {
   return (
-    <Badge variant={isActive ? 'default' : 'secondary'}>
+    <Badge
+      variant={isActive ? 'default' : 'secondary'}
+      className={isActive ? 'bg-emerald-600/40 text-emerald-300' : 'bg-red-600/40 text-red-300'}
+    >
       {isActive ? activeLabel : inactiveLabel}
     </Badge>
   )
