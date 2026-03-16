@@ -1,4 +1,3 @@
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTable } from '@/components/shared/DataTable'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -7,57 +6,38 @@ import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ROLE_BADGE_VARIANTS } from '@/constants/roles'
+import { getInitials } from '@/lib/utils'
 import type { UserResponse } from '@/types/user.types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import {
-  ArrowUpDown,
-  KeyRound,
-  MoreHorizontal,
-  Pencil,
-  ShieldCheck,
-  ShieldOff,
-  Trash2,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowUpDown, MoreHorizontal } from 'lucide-react'
+import React, { useMemo } from 'react'
 
 interface UserTableProps {
   data: UserResponse[]
   isLoading: boolean
-  onEdit: (user: UserResponse) => void
-  onResetPassword: (user: UserResponse) => void
-  onToggleActive: (user: UserResponse) => void
-  onDelete: (user: UserResponse) => void
+  showRoleColumn?: boolean
+  showCompanyColumn?: boolean
+  showBranchColumn?: boolean
+  renderActions?: (user: UserResponse) => React.ReactNode
   filterSlot?: React.ReactNode
 }
 
 export function UserTable({
   data,
   isLoading,
-  onEdit,
-  onResetPassword,
-  onToggleActive,
-  onDelete,
+  showRoleColumn = true,
+  showCompanyColumn = false,
+  showBranchColumn = false,
+  renderActions,
   filterSlot,
 }: UserTableProps) {
-  const [userToToggle, setUserToToggle] = useState<UserResponse | null>(null)
-  const isAlertOpen = !!userToToggle
-
-  const handleConfirmToggle = () => {
-    if (userToToggle) {
-      onToggleActive(userToToggle)
-      setUserToToggle(null)
-    }
-  }
-
-  const columns = useMemo<ColumnDef<UserResponse>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<UserResponse>[]>(() => {
+    const cols: ColumnDef<UserResponse>[] = [
       {
         id: 'fullName',
         header: ({ column }) => (
@@ -67,7 +47,7 @@ export function UserTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Nombre Completo
-            <ArrowUpDown className="ml-2 h-3 w-3" />
+            <ArrowUpDown className="ml-2 size-3" />
           </Button>
         ),
         accessorFn: (row) =>
@@ -75,17 +55,12 @@ export function UserTable({
         cell: ({ row }) => {
           const u = row.original
           const fullName = `${u.name} ${u.paternalSurname ?? ''} ${u.maternalSurname ?? ''}`.trim()
-          const initials = fullName
-            .split(' ')
-            .map((w) => w[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2)
+
           return (
             <div className="flex items-center gap-3">
-              <Avatar className="h-8 w-8">
+              <Avatar className="size-8">
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {initials}
+                  {getInitials(fullName)}
                 </AvatarFallback>
               </Avatar>
               <div>
@@ -96,6 +71,7 @@ export function UserTable({
           )
         },
       },
+
       {
         accessorKey: 'phone',
         header: 'Teléfono',
@@ -105,132 +81,113 @@ export function UserTable({
           </span>
         ),
       },
-      {
+    ]
+
+    if (showCompanyColumn) {
+      cols.push({
+        id: 'companyName',
+        header: 'Empresa',
+        accessorFn: (row) => row.assignment?.companyName ?? null,
+        cell: ({ row }) => {
+          const companyName = row.original.assignment?.companyName
+          return (
+            <span className="text-sm">
+              {companyName ?? <span className="text-muted-foreground">Sin asignar</span>}
+            </span>
+          )
+        },
+      })
+    }
+
+    if (showBranchColumn) {
+      cols.push({
+        id: 'branchName',
+        header: 'Sucursal',
+        accessorFn: (row) => row.assignment?.branchName ?? null,
+        cell: ({ row }) => {
+          const branchName = row.original.assignment?.branchName
+          return (
+            <span className="text-sm">
+              {branchName ?? <span className="text-muted-foreground">Sin asignar</span>}
+            </span>
+          )
+        },
+      })
+    }
+
+    if (showRoleColumn) {
+      cols.push({
         accessorKey: 'roleName',
         header: 'Rol',
         cell: ({ row, getValue }) => {
           const role = getValue() as string
           const roleId = row.original.roleId
-          console.log({ role, roleId })
           return (
-            <Badge
-              variant="outline"
-              className={ROLE_BADGE_VARIANTS[roleId] ?? 'bg-gray-100 text-gray-800'}
-            >
+            <Badge variant="outline" className={ROLE_BADGE_VARIANTS[roleId] ?? ''}>
               {role}
             </Badge>
           )
         },
+      })
+    }
+
+    cols.push({
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          className="h-auto p-0 font-medium hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Fecha Registro
+          <ArrowUpDown className="ml-2 size-3" />
+        </Button>
+      ),
+      cell: ({ getValue }) => {
+        const date = getValue() as string | null
+        if (!date) return <span className="text-muted-foreground">-</span>
+        return (
+          <span className="text-sm">{format(new Date(date), 'dd MMM yyyy', { locale: es })}</span>
+        )
       },
-      {
-        accessorKey: 'createdAt',
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            className="-ml-4 h-auto p-0 font-medium hover:bg-transparent"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Fecha Registro
-            <ArrowUpDown className="ml-2 h-3 w-3" />
-          </Button>
-        ),
-        cell: ({ getValue }) => {
-          const date = getValue() as string | null
-          if (!date) return <span className="text-muted-foreground">-</span>
-          return (
-            <span className="text-sm">{format(new Date(date), 'dd MMM yyyy', { locale: es })}</span>
-          )
-        },
+    })
+
+    cols.push({
+      accessorKey: 'isActive',
+      header: 'Estado',
+      cell: ({ getValue }) => <StatusBadge isActive={getValue() as boolean} />,
+    })
+
+    cols.push({
+      id: 'actions',
+      header: 'Acciones',
+      cell: ({ row }) => {
+        if (!renderActions) return null
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8">
+                <MoreHorizontal className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-auto">
+              {renderActions(row.original)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
       },
-      {
-        accessorKey: 'isActive',
-        header: 'Estado',
-        cell: ({ getValue }) => <StatusBadge isActive={getValue() as boolean} />,
-      },
-      {
-        id: 'actions',
-        header: 'Acciones',
-        cell: ({ row }) => {
-          const user = row.original
-          return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-auto">
-                <DropdownMenuItem onClick={() => onEdit(user)}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onResetPassword(user)}>
-                  <KeyRound className="mr-2 h-4 w-4" />
-                  Resetear contraseña
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setUserToToggle(user)}
-                  className="cursor-pointer whitespace-nowrap"
-                >
-                  {user.isActive ? (
-                    <>
-                      <ShieldOff className="mr-2 h-4 w-4" />
-                      Desactivar
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Activar
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onDelete(user)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        },
-      },
-    ],
-    [onEdit, onResetPassword, onDelete],
-  )
+    })
+
+    return cols
+  }, [showRoleColumn, showCompanyColumn, showBranchColumn, renderActions])
 
   return (
-    <>
-      <DataTable
-        columns={columns}
-        data={data}
-        isLoading={isLoading}
-        searchPlaceholder="Filtrar usuarios..."
-        filterSlot={filterSlot}
-      />
-
-      <ConfirmDialog
-        open={isAlertOpen}
-        onOpenChange={(open) => !open && setUserToToggle(null)}
-        title={
-          userToToggle
-            ? `¿Estás seguro de ${userToToggle.isActive ? 'desactivar' : 'activar'} a este usuario?`
-            : ''
-        }
-        description={
-          userToToggle
-            ? userToToggle.isActive
-              ? `Al desactivar a ${userToToggle.name}, no podrá acceder a la plataforma hasta que vuelvas a activarlo.`
-              : `Al activar a ${userToToggle.name}, recuperará el acceso a la plataforma inmediatamente.`
-            : ''
-        }
-        onConfirm={handleConfirmToggle}
-        confirmLabel={userToToggle?.isActive ? 'Desactivar' : 'Activar'}
-        variant={userToToggle?.isActive ? 'destructive' : 'default'}
-      />
-    </>
+    <DataTable
+      columns={columns}
+      data={data}
+      isLoading={isLoading}
+      searchPlaceholder="Filtrar usuarios..."
+      filterSlot={filterSlot}
+    />
   )
 }

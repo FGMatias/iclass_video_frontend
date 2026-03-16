@@ -1,13 +1,5 @@
 import { Button } from '@/components/ui/button'
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
   Drawer,
   DrawerClose,
   DrawerContent,
@@ -18,48 +10,61 @@ import {
 } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
-import { useCompanies } from '@/hooks/queries/useCompany'
-import { cn } from '@/lib/utils'
-import { createCompanyAdminSchema, type CreateCompanyAdminFormData } from '@/schemas/user.schema'
+import { type CreateCompanyAdminFormData, type UpdateUserFormData } from '@/schemas/user.schema'
 import type { UserResponse } from '@/types/user.types'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, ChevronsUpDown, Loader2, Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { CompanyModal } from '../company/CompanyModal'
+import type z from 'zod'
+import { BranchSelector } from '../branch/BranchSelector'
+import { CompanySelector } from '../company/CompanySelector'
 
 interface UserFormProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreateCompanyAdminFormData) => void
+  onSubmit: (data: CreateCompanyAdminFormData | UpdateUserFormData) => void
   user?: UserResponse | null
   isLoading?: boolean
+  fixedCompanyId?: number
+  fixedBranchId?: number
+  showCompanySelect?: boolean
+  showBranchSelect?: boolean
+  schema: z.ZodType<any, any>
 }
 
-export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: UserFormProps) {
-  const { data: companies = [] } = useCompanies()
+export function UserForm({
+  open,
+  onOpenChange,
+  onSubmit,
+  user,
+  isLoading,
+  fixedCompanyId,
+  fixedBranchId,
+  showCompanySelect,
+  showBranchSelect,
+  schema,
+}: UserFormProps) {
   const isEditing = !!user
-  const [companyOpen, setCompanyOpen] = useState(false)
-  const [selectedCompanyId, setSelectedCompanyId] = useState<number | undefined>()
-  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
-  } = useForm<z.input<typeof createCompanyAdminSchema>, any, CreateCompanyAdminFormData>({
-    resolver: zodResolver(createCompanyAdminSchema),
+  } = useForm({
+    resolver: zodResolver(schema),
   })
+
+  const currentCompanyId = watch('companyId')
+  const currentBranchId = watch('branchId')
 
   useEffect(() => {
     if (open && user) {
       reset({
-        companyId: undefined,
         username: user.username,
         name: user.name,
         paternalSurname: user.paternalSurname ?? '',
@@ -67,11 +72,13 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
         documentNumber: user.documentNumber ?? '',
         email: user.email ?? '',
         phone: user.phone ?? '',
+        companyId: undefined,
+        branchId: undefined,
       })
-      setSelectedCompanyId(undefined)
     } else if (open && !user) {
       reset({
-        companyId: undefined,
+        companyId: fixedCompanyId,
+        branchId: fixedBranchId,
         username: '',
         name: '',
         paternalSurname: '',
@@ -80,17 +87,8 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
         email: '',
         phone: '',
       })
-      setSelectedCompanyId(undefined)
     }
-  }, [open, user, reset])
-
-  const handleSelectCompany = (companyId: number) => {
-    setSelectedCompanyId(companyId)
-    setValue('companyId', companyId)
-    setCompanyOpen(false)
-  }
-
-  const selectedCompany = companies.find((c) => c.id === selectedCompanyId)
+  }, [open, user, reset, fixedCompanyId, fixedBranchId])
 
   return (
     <>
@@ -123,7 +121,7 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
                     {...register('username')}
                   />
                   {errors.username && (
-                    <p className="text-destructive text-sm">{errors.username.message}</p>
+                    <p className="text-destructive text-sm">{errors.username.message as string}</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -136,7 +134,9 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
                     disabled={isLoading}
                     {...register('name')}
                   />
-                  {errors.name && <p className="text-destructive text-sm">{errors.name.message}</p>}
+                  {errors.name && (
+                    <p className="text-destructive text-sm">{errors.name.message as string}</p>
+                  )}
                 </div>
               </div>
 
@@ -182,7 +182,9 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
                   disabled={isLoading}
                   {...register('email')}
                 />
-                {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
+                {errors.email && (
+                  <p className="text-destructive text-sm">{errors.email.message as string}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -195,78 +197,33 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
                   disabled={isLoading}
                   {...register('phone')}
                 />
-                {errors.phone && <p className="text-destructive text-sm">{errors.phone.message}</p>}
+                {errors.phone && (
+                  <p className="text-destructive text-sm">{errors.phone.message as string}</p>
+                )}
               </div>
 
-              {!isEditing && (
+              {!isEditing && (showCompanySelect || showBranchSelect) && (
                 <div className="pt-2">
                   <Separator className="mb-6" />
-                  <div className="space-y-3">
-                    <Label>
-                      Empresa <span className="text-red-500">*</span>
-                    </Label>
-                    <Popover open={companyOpen} onOpenChange={setCompanyOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={companyOpen}
-                          disabled={isLoading}
-                          className={cn(
-                            'w-full justify-between font-normal',
-                            !selectedCompany && 'text-muted-foreground',
-                          )}
-                        >
-                          <Search className="mr-2 size-4 shrink-0 opacity-50" />
-                          {selectedCompany ? selectedCompany.name : 'Buscar empresa...'}
-                          <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[--radix-popover-trigger-width] p-0"
-                        align="start"
-                      >
-                        <Command>
-                          <CommandInput placeholder="Buscar empresa..." />
-                          <CommandList>
-                            <CommandEmpty>No se encontraron empresas.</CommandEmpty>
-                            <CommandGroup>
-                              {companies
-                                .filter((c) => c.isActive)
-                                .map((c) => (
-                                  <CommandItem
-                                    key={c.id}
-                                    value={c.name}
-                                    onSelect={() => handleSelectCompany(c.id)}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 size-4',
-                                        selectedCompanyId === c.id ? 'opacity-100' : 'opacity-0',
-                                      )}
-                                    />
-                                    {c.name}
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    {errors.companyId && (
-                      <p className="text-destructive text-sm">{errors.companyId.message}</p>
-                    )}
-                    <p className="text-muted-foreground pt-1 text-sm">
-                      ¿No encuentras la Empresa?{' '}
-                      <button
-                        type="button"
-                        className="text-primary font-medium hover:underline"
-                        onClick={() => setIsCompanyModalOpen(true)}
-                      >
-                        Crear Empresa
-                      </button>
-                    </p>
-                  </div>
+
+                  {showCompanySelect && (
+                    <CompanySelector
+                      value={currentCompanyId}
+                      onChange={(id) => setValue('companyId', id, { shouldValidate: true })}
+                      error={errors.companyId?.message as string}
+                      disabled={isLoading}
+                    />
+                  )}
+
+                  {showBranchSelect && (
+                    <BranchSelector
+                      value={currentBranchId}
+                      onChange={(id) => setValue('branchId', id, { shouldValidate: true })}
+                      error={errors.branchId?.message as string}
+                      disabled={isLoading || !currentCompanyId}
+                      companyId={currentCompanyId}
+                    />
+                  )}
                 </div>
               )}
             </form>
@@ -293,12 +250,6 @@ export function UserForm({ open, onOpenChange, onSubmit, user, isLoading }: User
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-
-      <CompanyModal
-        open={isCompanyModalOpen}
-        onOpenChange={setIsCompanyModalOpen}
-        onSuccess={(newCompanyId) => handleSelectCompany(newCompanyId)}
-      />
     </>
   )
 }

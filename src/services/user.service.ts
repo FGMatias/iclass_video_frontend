@@ -1,5 +1,11 @@
 import api from '@/lib/axios'
-import { CreateCompanyAdminRequest, UpdateUserRequest, UserResponse } from '@/types/user.types'
+import type {
+  ChangePasswordRequest,
+  CreateBranchAdminRequest,
+  CreateCompanyAdminRequest,
+  UpdateUserRequest,
+  UserResponse,
+} from '@/types/user.types'
 
 export const userService = {
   findAll: async (roleId?: number): Promise<UserResponse[]> => {
@@ -16,6 +22,11 @@ export const userService = {
 
   createCompanyAdmin: async (data: CreateCompanyAdminRequest): Promise<UserResponse> => {
     const response = await api.post<UserResponse>('/user/company-admin', data)
+    return response.data
+  },
+
+  createBranchAdmin: async (data: CreateBranchAdminRequest): Promise<UserResponse> => {
+    const response = await api.post<UserResponse>('/user/branch-admin', data)
     return response.data
   },
 
@@ -36,7 +47,15 @@ export const userService = {
     await api.put(`/user/${id}/deactivate`)
   },
 
-  resetPassword: async (id: number, newPassword: string): Promise<void> => {
-    await api.put(`/user/${id}/reset-password`, { newPassword })
+  reassignCompany: async (userId: number, companyId: number): Promise<void> => {
+    await api.put(`/user/${userId}/reassign-company`, { companyId })
+  },
+
+  resetPassword: async (id: number): Promise<void> => {
+    await api.put(`/user/${id}/reset-password`)
+  },
+
+  changePassword: async (id: number, data: ChangePasswordRequest): Promise<void> => {
+    await api.put(`/user/${id}/change-password`, data)
   },
 }

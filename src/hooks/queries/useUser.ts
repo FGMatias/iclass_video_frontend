@@ -1,7 +1,14 @@
 import { userService } from '@/services/user.service'
-import { CreateCompanyAdminRequest, UpdateUserRequest } from '@/types/user.types'
+import type {
+  ChangePasswordRequest,
+  CreateBranchAdminRequest,
+  CreateCompanyAdminRequest,
+  UpdateUserRequest,
+} from '@/types/user.types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { BRANCH_DETAIL_KEY } from './useBranch'
+import { COMPANY_DETAIL_KEY } from './useCompany'
 
 const USERS_KEYS = ['users']
 
@@ -12,20 +19,43 @@ export function useUsers(roleId?: number) {
   })
 }
 
-export function useCreateCompanyAdmin() {
+export function useCreateCompanyAdmin(companyId?: number) {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateCompanyAdminRequest) => userService.createCompanyAdmin(data),
+    mutationFn: ({ data }: { data: CreateCompanyAdminRequest }) =>
+      userService.createCompanyAdmin(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: USERS_KEYS })
       toast.success('Usuario creado exitosamente')
+
+      if (companyId) {
+        qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, companyId] })
+      }
     },
     onError: () => toast.error('Error al crear usuario'),
   })
 }
 
-export function useUpdateUser() {
+export function useCreateBranchAdmin(branchId?: number) {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ data }: { data: CreateBranchAdminRequest }) =>
+      userService.createBranchAdmin(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: USERS_KEYS })
+      toast.success('Usuario creado exitosamente')
+
+      if (branchId) {
+        qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
+      }
+    },
+    onError: () => toast.error('Error al crear usuario'),
+  })
+}
+
+export function useUpdateUser(companyId?: number) {
   const qc = useQueryClient()
 
   return useMutation({
@@ -34,6 +64,10 @@ export function useUpdateUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: USERS_KEYS })
       toast.success('Usuario actualizado')
+
+      if (companyId) {
+        qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, companyId] })
+      }
     },
     onError: () => toast.error('Error al actualizar el usuario'),
   })
@@ -78,11 +112,33 @@ export function useDeactivateUser() {
   })
 }
 
+export function useReassignCompany() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, companyId }: { userId: number; companyId: number }) =>
+      userService.reassignCompany(userId, companyId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: USERS_KEYS })
+      toast.success('Empresa reasignada exitosamente')
+    },
+    onError: () => toast.error('Error al reasignar la empresa'),
+  })
+}
+
 export function useResetPassword() {
   return useMutation({
-    mutationFn: ({ id, password }: { id: number; password: string }) =>
-      userService.resetPassword(id, password),
+    mutationFn: ({ id }: { id: number }) => userService.resetPassword(id),
     onSuccess: () => toast.success('Contraseña reseteada correctamente'),
     onError: () => toast.error('Error al resetear la contraseña'),
+  })
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ChangePasswordRequest }) =>
+      userService.changePassword(id, data),
+    onSuccess: () => toast.success('Contraseña actualizada correctamente'),
+    onError: () => toast.error('Error al actualizar la contraseña'),
   })
 }
