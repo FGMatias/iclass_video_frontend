@@ -1,4 +1,4 @@
-import { AuthUser, UserAuthResponse } from '@/types/auth.types'
+import type { AuthUser, UserAuthResponse } from '@/types/auth.types'
 
 const TOKEN_KEY = 'iclass_token'
 const USER_KEY = 'iclass_user'
@@ -30,6 +30,7 @@ let state: AuthState = getInitialState()
 
 export const useAuthStore = {
   getState: () => state,
+
   login: (response: UserAuthResponse) => {
     const user: AuthUser = {
       id: response.id,
@@ -46,6 +47,7 @@ export const useAuthStore = {
 
     notifyListeners()
   },
+
   logout: () => {
     state = { token: null, user: null }
 
@@ -54,6 +56,7 @@ export const useAuthStore = {
 
     notifyListeners()
   },
+
   subscribe: (listener: Listener) => {
     listeners.add(listener)
     return () => listeners.delete(listener)

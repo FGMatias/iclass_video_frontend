@@ -9,6 +9,6 @@ export function RoleRedirect() {
     return <Navigate to="/login" replace />
   }
 
-  const nav = getNavigation(user.roleName)
+  const nav = getNavigation(user.roleId)
   return <Navigate to={nav.defaultPath} replace />
 }

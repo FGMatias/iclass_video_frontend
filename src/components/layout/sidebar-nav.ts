@@ -1,3 +1,4 @@
+import { ROLES } from '@/constants/roles'
 import {
   Building2,
   GitBranch,
@@ -26,8 +27,8 @@ export interface RoleNavConfig {
   defaultPath: string
 }
 
-export const navigationByRole: Record<string, RoleNavConfig> = {
-  SUPER_ADMINISTRADOR: {
+export const navigationByRole: Record<number, RoleNavConfig> = {
+  [ROLES.SUPER_ADMINISTRADOR]: {
     defaultPath: '/usuarios',
     groups: [
       {
@@ -43,7 +44,7 @@ export const navigationByRole: Record<string, RoleNavConfig> = {
       },
     ],
   },
-  ADMINISTRADOR_EMPRESA: {
+  [ROLES.ADMINISTRADOR_EMPRESA]: {
     defaultPath: '/dashboard',
     groups: [
       {
@@ -57,7 +58,7 @@ export const navigationByRole: Record<string, RoleNavConfig> = {
       },
     ],
   },
-  ADMINISTRADOR_SUCURSAL: {
+  [ROLES.ADMINISTRADOR_SUCURSAL]: {
     defaultPath: '/videos',
     groups: [
       {
@@ -76,6 +77,6 @@ export const navigationByRole: Record<string, RoleNavConfig> = {
   },
 }
 
-export function getNavigation(roleName: string): RoleNavConfig {
-  return navigationByRole[roleName] ?? navigationByRole.SUPER_ADMINISTRADOR
+export function getNavigation(roleId: number): RoleNavConfig {
+  return navigationByRole[roleId] ?? navigationByRole[ROLES.SUPER_ADMINISTRADOR]
 }
