@@ -1,19 +1,28 @@
 import { companyService } from '@/services/company.service'
-import { CreateCompanyRequest, UpdateCompanyRequest } from '@/types/company.types'
+import type { CreateCompanyRequest, UpdateCompanyRequest } from '@/types/company.types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-const COMPANIES_KEYS = ['companies']
+export const COMPANIES_KEYS = ['companies']
+export const COMPANY_DETAIL_KEY = 'company-detail'
 
 export function useCompanies() {
   return useQuery({ queryKey: COMPANIES_KEYS, queryFn: companyService.findAll })
+}
+
+export function useDetailCompany(id: number | undefined) {
+  return useQuery({
+    queryKey: [COMPANY_DETAIL_KEY, id],
+    queryFn: () => companyService.detail(id!),
+    enabled: !!id,
+  })
 }
 
 export function useCreateCompany() {
   const qc = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateCompanyRequest) => companyService.create(data),
+    mutationFn: ({ data }: { data: CreateCompanyRequest }) => companyService.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: COMPANIES_KEYS })
       toast.success('Empresa creada correctamente')
@@ -28,8 +37,9 @@ export function useUpdateCompany() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCompanyRequest }) =>
       companyService.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: COMPANIES_KEYS })
+      qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, variables.id] })
       toast.success('Empresa editada correctamente')
     },
     onError: () => toast.error('Error al editar la empresa'),

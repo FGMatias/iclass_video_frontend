@@ -1,5 +1,10 @@
 import api from '@/lib/axios'
-import { CompanyResponse, CreateCompanyRequest, UpdateCompanyRequest } from '@/types/company.types'
+import type {
+  CompanyDetail,
+  CompanyResponse,
+  CreateCompanyRequest,
+  UpdateCompanyRequest,
+} from '@/types/company.types'
 
 export const companyService = {
   findAll: async (): Promise<CompanyResponse[]> => {
@@ -9,6 +14,11 @@ export const companyService = {
 
   findById: async (id: number): Promise<CompanyResponse> => {
     const response = await api.get<CompanyResponse>(`/company/${id}`)
+    return response.data
+  },
+
+  detail: async (id: number): Promise<CompanyDetail> => {
+    const response = await api.get<CompanyDetail>(`/company/${id}/detail`)
     return response.data
   },
 

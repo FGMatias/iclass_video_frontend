@@ -1,3 +1,4 @@
+import { toCreateCompany } from '@/adapters/company.adapter'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -47,14 +48,18 @@ export function CompanyModal({ open, onOpenChange, onSuccess }: CompanyModalProp
   }
 
   const onSubmit = (data: CreateCompanyFormData) => {
-    createCompany(data, {
-      onSuccess: (response) => {
-        if (onSuccess && response?.id) {
-          onSuccess(response.id)
-        }
-        handleOpenChange(false)
+    const payload = toCreateCompany(data)
+    createCompany(
+      { data: payload },
+      {
+        onSuccess: (response) => {
+          if (onSuccess && response?.id) {
+            onSuccess(response.id)
+          }
+          handleOpenChange(false)
+        },
       },
-    })
+    )
   }
 
   return (
