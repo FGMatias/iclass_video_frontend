@@ -19,7 +19,6 @@ export const branchService = {
   },
 
   update: async (id: number, data: UpdateBranchRequest): Promise<BranchResponse> => {
-    console.log({ id, data })
     const response = await api.put<BranchResponse>(`/branch/${id}`, data)
     return response.data
   },
