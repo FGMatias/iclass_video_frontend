@@ -1,6 +1,7 @@
 import { CompanyDetailPage } from '@/components/features/company/CompanyDetailPage'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { CompanyPage } from '@/pages/company/CompanyPage'
+import { SystemConfigPage } from '@/pages/configuration/SystemConfigPage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { UsersPage } from '@/pages/user/UserPage'
 import { Navigate, Route, Routes } from 'react-router-dom'
@@ -19,6 +20,7 @@ export function AppRouter() {
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/empresas" element={<CompanyPage />} />
           <Route path="/empresas/:id" element={<CompanyDetailPage />} />
+          <Route path="/configuracion" element={<SystemConfigPage />} />
         </Route>
       </Route>
 
