@@ -9,68 +9,71 @@ import {
   useUpdateSystemConfig,
 } from '@/hooks/queries/useSystemConfig'
 import { FileVideo, Folder, HardDrive, Loader2, RotateCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+
+// Constantes para las keys — un solo lugar a cambiar si el backend las renombra
+const CONFIG_KEY = {
+  STORAGE_PATH: 'video.storage.path',
+  MAX_SIZE_MB: 'video.max.size.mb',
+  ALLOWED_EXTENSIONS: 'video.allowed.extensions',
+} as const
+
+type ConfigFormData = Record<(typeof CONFIG_KEY)[keyof typeof CONFIG_KEY], string>
 
 export function SystemConfigPage() {
   const { data: configs = [], isLoading } = useSystemConfig()
   const updateConfig = useUpdateSystemConfig()
   const resetConfig = useResetSystemConfig()
-  const [isSavingAll, setIsSavingAll] = useState(false)
+
+  // Un solo Map en lugar de 3 configs.find() repetidos en cada render
+  const configMap = useMemo(() => new Map(configs.map((c) => [c.configKey, c])), [configs])
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { dirtyFields },
-  } = useForm<Record<string, string>>()
-
-  const storagePathConfig = configs.find((c) => c.configKey === 'video.storage.path')
-  const maxSizeConfig = configs.find((c) => c.configKey === 'video.max.size.mb')
-  const extensionsConfig = configs.find((c) => c.configKey === 'video.allowed.extensions')
+  } = useForm<ConfigFormData>()
 
   useEffect(() => {
-    if (configs.length > 0) {
-      reset({
-        'video.storage.path': storagePathConfig?.configValue ?? '',
-        'video.max.size.mb': maxSizeConfig?.configValue ?? '',
-        'video.allowed.extensions': extensionsConfig?.configValue ?? '',
-      })
-    }
-  }, [configs, reset, storagePathConfig, maxSizeConfig, extensionsConfig])
+    if (configs.length === 0) return
 
-  const onSubmit = async (data: Record<string, string>) => {
-    const changedKeys = Object.keys(dirtyFields)
+    reset({
+      [CONFIG_KEY.STORAGE_PATH]: configMap.get(CONFIG_KEY.STORAGE_PATH)?.configValue ?? '',
+      [CONFIG_KEY.MAX_SIZE_MB]: configMap.get(CONFIG_KEY.MAX_SIZE_MB)?.configValue ?? '',
+      [CONFIG_KEY.ALLOWED_EXTENSIONS]:
+        configMap.get(CONFIG_KEY.ALLOWED_EXTENSIONS)?.configValue ?? '',
+    })
+  }, [configs, reset, configMap])
+
+  const onSubmit = async (data: ConfigFormData) => {
+    const changedKeys = Object.keys(dirtyFields) as (keyof ConfigFormData)[]
 
     if (changedKeys.length === 0) {
       toast.info('No hay cambios para guardar')
       return
     }
 
-    setIsSavingAll(true)
-    try {
-      const promises = changedKeys.map((key) => {
-        const configId = configs.find((c) => c.configKey === key)?.id
-        if (!configId) return Promise.resolve()
-
-        return updateConfig.mutateAsync({
-          id: configId,
-          data: { configValue: data[key] },
-        })
-      })
-
-      await Promise.all(promises)
-    } catch (error) {
-      console.error('Error al guardar las configuraciones:', error)
-    } finally {
-      setIsSavingAll(false)
-    }
+    await Promise.all(
+      changedKeys.map((key) => {
+        const config = configMap.get(key)
+        if (!config) return Promise.resolve()
+        return updateConfig.mutateAsync({ id: config.id, data: { configValue: data[key] } })
+      }),
+    )
   }
 
   const handleReset = (id?: number) => {
     if (id) resetConfig.mutate({ id })
   }
+
+  const isDisabled = updateConfig.isPending || resetConfig.isPending
+  const hasChanges = Object.keys(dirtyFields).length > 0
+  const storagePathConfig = configMap.get(CONFIG_KEY.STORAGE_PATH)
+  const maxSizeConfig = configMap.get(CONFIG_KEY.MAX_SIZE_MB)
+  const extensionsConfig = configMap.get(CONFIG_KEY.ALLOWED_EXTENSIONS)
 
   if (isLoading) {
     return (
@@ -95,7 +98,7 @@ export function SystemConfigPage() {
           </CardHeader>
 
           <CardContent>
-            <form id="system-config-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
               {storagePathConfig && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -124,8 +127,8 @@ export function SystemConfigPage() {
                     <Input
                       id="storage-path"
                       className="pl-10"
-                      disabled={isSavingAll || resetConfig.isPending}
-                      {...register('video.storage.path')}
+                      disabled={isDisabled}
+                      {...register(CONFIG_KEY.STORAGE_PATH)}
                     />
                   </div>
                   <p className="text-muted-foreground text-sm">{storagePathConfig.description}</p>
@@ -161,8 +164,8 @@ export function SystemConfigPage() {
                       id="max-size"
                       type="number"
                       className="pr-12 pl-10"
-                      disabled={isSavingAll || resetConfig.isPending}
-                      {...register('video.max.size.mb')}
+                      disabled={isDisabled}
+                      {...register(CONFIG_KEY.MAX_SIZE_MB)}
                     />
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <span className="text-muted-foreground text-sm font-medium">MB</span>
@@ -200,8 +203,8 @@ export function SystemConfigPage() {
                     <Input
                       id="allowed-extensions"
                       className="pl-10"
-                      disabled={isSavingAll || resetConfig.isPending}
-                      {...register('video.allowed.extensions')}
+                      disabled={isDisabled}
+                      {...register(CONFIG_KEY.ALLOWED_EXTENSIONS)}
                     />
                   </div>
                   <p className="text-muted-foreground text-sm">{extensionsConfig.description}</p>
@@ -209,12 +212,8 @@ export function SystemConfigPage() {
               )}
 
               <div className="flex justify-end pt-4">
-                <Button
-                  type="submit"
-                  disabled={isSavingAll || Object.keys(dirtyFields).length === 0}
-                  className="bg-primary"
-                >
-                  {isSavingAll ? (
+                <Button type="submit" disabled={isDisabled || !hasChanges}>
+                  {updateConfig.isPending ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />
                       Guardando...
