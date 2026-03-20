@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/useAuth'
+import { getInitials } from '@/lib/utils'
 import { ChevronsUpDown, LockKeyhole, LogOut, MonitorPlay } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -35,12 +36,7 @@ export function AppSidebar() {
 
   const nav = getNavigation(user.roleId)
 
-  const initials = user.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const initials = getInitials(user.name)
 
   const handleLogout = () => {
     logout()
