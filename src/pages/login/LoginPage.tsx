@@ -7,15 +7,25 @@ import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff, Loader2, MonitorPlay } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const location = useLocation()
+  const sessionExpired = location.state?.reason === 'expired'
+
+  useEffect(() => {
+    if (sessionExpired) {
+      toast.warning('Sesión expirada', {
+        description: 'Tu sesión ha expirado. Inicia sesión nuevamente.',
+      })
+    }
+  }, [])
 
   const {
     register,

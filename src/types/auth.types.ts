@@ -12,6 +12,7 @@ export interface UserAuthResponse {
   email: string
   roleId: number
   roleName: string
+  expiresAt: string
 }
 
 export interface AuthUser {
@@ -21,4 +22,5 @@ export interface AuthUser {
   email: string
   roleId: number
   roleName: string
+  tokenExpiresAt: string
 }

@@ -15,11 +15,23 @@ function notifyListeners() {
   listeners.forEach((listener) => listener())
 }
 
+function isTokenExpired(expiresAt: string | undefined): boolean {
+  if (!expiresAt) return true
+  return new Date(expiresAt) <= new Date()
+}
+
 function getInitialState(): AuthState {
   try {
     const token = localStorage.getItem(TOKEN_KEY)
     const userJson = localStorage.getItem(USER_KEY)
     const user = userJson ? (JSON.parse(userJson) as AuthUser) : null
+
+    if (token && user && isTokenExpired(user.tokenExpiresAt)) {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(USER_KEY)
+      return { token: null, user: null }
+    }
+
     return { token, user }
   } catch {
     return { token: null, user: null }
@@ -39,6 +51,7 @@ export const useAuthStore = {
       email: response.email,
       roleId: response.roleId,
       roleName: response.roleName,
+      tokenExpiresAt: response.expiresAt,
     }
 
     state = { token: response.token, user }
@@ -61,4 +74,6 @@ export const useAuthStore = {
     listeners.add(listener)
     return () => listeners.delete(listener)
   },
+
+  isTokenExpired: () => isTokenExpired(state.user?.tokenExpiresAt),
 }
