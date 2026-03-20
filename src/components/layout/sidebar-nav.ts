@@ -1,9 +1,9 @@
 import { ROLES } from '@/constants/roles'
+import { ROUTES } from '@/constants/routes'
 import {
   Building2,
   GitBranch,
   Layers,
-  LayoutDashboard,
   MonitorSmartphone,
   Settings,
   Users,
@@ -29,49 +29,60 @@ export interface RoleNavConfig {
 
 export const navigationByRole: Record<number, RoleNavConfig> = {
   [ROLES.SUPER_ADMINISTRADOR]: {
-    defaultPath: '/usuarios',
+    defaultPath: ROUTES.ADMINISTRATOR.USER,
     groups: [
       {
         label: 'GESTIÓN',
         items: [
-          { title: 'Usuarios', url: '/usuarios', icon: Users },
-          { title: 'Empresas', url: '/empresas', icon: Building2 },
+          { title: 'Usuarios', url: ROUTES.ADMINISTRATOR.USER, icon: Users },
+          { title: 'Empresas', url: ROUTES.ADMINISTRATOR.COMPANY, icon: Building2 },
         ],
       },
       {
         label: 'SISTEMA',
-        items: [{ title: 'Configuración', url: '/configuracion', icon: Settings }],
+        items: [
+          { title: 'Configuración', url: ROUTES.ADMINISTRATOR.CONFIGURATION, icon: Settings },
+        ],
       },
     ],
   },
   [ROLES.ADMINISTRADOR_EMPRESA]: {
-    defaultPath: '/dashboard',
+    defaultPath: ROUTES.COMPANY_ADMINISTRATOR.USER,
     groups: [
       {
         label: 'GESTIÓN',
         items: [
-          { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-          { title: 'Usuarios', url: '/usuarios', icon: Users },
-          { title: 'Sucursales', url: '/sucursales', icon: GitBranch },
-          { title: 'Videos', url: '/videos', icon: Video },
+          { title: 'Usuarios', url: ROUTES.COMPANY_ADMINISTRATOR.USER, icon: Users },
+          { title: 'Sucursales', url: ROUTES.COMPANY_ADMINISTRATOR.BRANCH, icon: GitBranch },
+          { title: 'Videos', url: ROUTES.COMPANY_ADMINISTRATOR.VIDEO, icon: Video },
         ],
       },
     ],
   },
   [ROLES.ADMINISTRADOR_SUCURSAL]: {
-    defaultPath: '/videos',
+    defaultPath: ROUTES.BRANCH_ADMINISTRATOR.VIDEO,
     groups: [
       {
         label: 'GESTIÓN',
         items: [
-          { title: 'Videos', url: '/videos', icon: Video },
-          { title: 'Areas', url: '/area', icon: Layers },
-          { title: 'Dispositivos', url: '/dispositivos', icon: MonitorSmartphone },
+          { title: 'Videos', url: ROUTES.BRANCH_ADMINISTRATOR.VIDEO, icon: Video },
+          { title: 'Areas', url: ROUTES.BRANCH_ADMINISTRATOR.AREA, icon: Layers },
+          {
+            title: 'Dispositivos',
+            url: ROUTES.BRANCH_ADMINISTRATOR.DEVICE,
+            icon: MonitorSmartphone,
+          },
         ],
       },
       {
         label: 'SISTEMA',
-        items: [{ title: 'Configuración', url: '/configuracion', icon: Settings }],
+        items: [
+          {
+            title: 'Configuración',
+            url: ROUTES.BRANCH_ADMINISTRATOR.CONFIGURATION,
+            icon: Settings,
+          },
+        ],
       },
     ],
   },
