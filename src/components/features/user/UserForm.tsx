@@ -59,7 +59,7 @@ export function UserForm({
     resolver: zodResolver(schema),
   })
 
-  const currentCompanyId = watch('companyId')
+  const currentCompanyId = watch('companyId') || fixedCompanyId
   const currentBranchId = watch('branchId')
 
   useEffect(() => {

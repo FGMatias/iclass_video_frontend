@@ -7,15 +7,28 @@ import type {
 } from '@/types/user.types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuth } from '../useAuth'
 import { BRANCH_DETAIL_KEY } from './useBranch'
 import { COMPANY_DETAIL_KEY } from './useCompany'
 
-const USERS_KEYS = ['users']
+export const USERS_KEYS = ['users']
+export const CURRENT_USER_KEY = 'currentUser'
 
 export function useUsers(roleId?: number) {
   return useQuery({
     queryKey: roleId ? [...USERS_KEYS, roleId] : USERS_KEYS,
     queryFn: () => userService.findAll(roleId),
+  })
+}
+
+export function useCurrentUser() {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: [CURRENT_USER_KEY, user?.id],
+    queryFn: () => userService.findById(user!.id),
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 60,
   })
 }
 

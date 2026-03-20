@@ -22,6 +22,7 @@ import {
   useActivateUser,
   useCreateBranchAdmin,
   useCreateCompanyAdmin,
+  useCurrentUser,
   useDeactivateUser,
   useDeleteUser,
   useReassignBranch,
@@ -55,10 +56,13 @@ import { useState } from 'react'
 
 export function UsersPage() {
   const { user } = useAuth()
+  const { data: currentUserProfile } = useCurrentUser()
   const roleFilter = user ? MANAGED_ROLE_BY_USER_ROL[user.roleId] : undefined
   const { data: users = [], isLoading } = useUsers(roleFilter)
   const isSuperAdmin = user?.roleId === ROLES.SUPER_ADMINISTRADOR
   const isCompanyAdmin = user?.roleId === ROLES.ADMINISTRADOR_EMPRESA
+  const companyId = currentUserProfile?.assignment?.companyId
+  const branchId = currentUserProfile?.assignment?.branchId ?? undefined
   const createCompanyAdmin = useCreateCompanyAdmin()
   const createBranchAdmin = useCreateBranchAdmin()
   const updateUser = useUpdateUser()
@@ -77,6 +81,8 @@ export function UsersPage() {
   const [toggleUserDialog, setToggleUserDialog] = useState<UserResponse | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<UserResponse | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
+
+  console.log({ user })
 
   const filteredUsers =
     statusFilter === 'all'
@@ -261,6 +267,8 @@ export function UsersPage() {
         schema={formSchema}
         showCompanySelect={isSuperAdmin}
         showBranchSelect={isCompanyAdmin}
+        fixedCompanyId={isCompanyAdmin ? companyId : undefined}
+        fixedBranchId={isCompanyAdmin ? branchId : undefined}
       />
 
       <ConfirmDialog
