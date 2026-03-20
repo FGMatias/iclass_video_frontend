@@ -126,6 +126,20 @@ export function useReassignCompany() {
   })
 }
 
+export function useReassignBranch() {
+  const qc = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, branchId }: { userId: number; branchId: number }) =>
+      userService.reassignBranch(userId, branchId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: USERS_KEYS })
+      toast.success('Sucursal reasignada exitosamente')
+    },
+    onError: () => toast.error('Error al reasignar la sucursal'),
+  })
+}
+
 export function useResetPassword() {
   return useMutation({
     mutationFn: ({ id }: { id: number }) => userService.resetPassword(id),

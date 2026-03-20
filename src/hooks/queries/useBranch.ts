@@ -7,8 +7,11 @@ import { COMPANY_DETAIL_KEY } from './useCompany'
 export const BRANCHES_KEYS = ['branches']
 export const BRANCH_DETAIL_KEY = 'branch-detail'
 
-export function useBranches() {
-  return useQuery({ queryKey: BRANCHES_KEYS, queryFn: branchService.findAll })
+export function useBranches(companyId?: number) {
+  return useQuery({
+    queryKey: companyId ? [...BRANCHES_KEYS, companyId] : BRANCHES_KEYS,
+    queryFn: () => branchService.findAll(companyId),
+  })
 }
 
 export function useCreateBranch(companyId?: number) {

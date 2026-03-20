@@ -220,8 +220,8 @@ export function UserForm({
                       value={currentBranchId}
                       onChange={(id) => setValue('branchId', id, { shouldValidate: true })}
                       error={errors.branchId?.message as string}
-                      disabled={isLoading || !currentCompanyId}
-                      companyId={currentCompanyId}
+                      disabled={isLoading || (!currentCompanyId && showCompanySelect)}
+                      companyId={currentCompanyId!}
                     />
                   )}
                 </div>

@@ -51,6 +51,10 @@ export const userService = {
     await api.put(`/user/${userId}/reassign-company`, { companyId })
   },
 
+  reassignBranch: async (userId: number, branchId: number): Promise<void> => {
+    await api.put(`/user/${userId}/reassign-branch`, { branchId })
+  },
+
   resetPassword: async (id: number): Promise<void> => {
     await api.put(`/user/${id}/reset-password`)
   },

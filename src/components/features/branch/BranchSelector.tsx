@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/command'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useCompanies } from '@/hooks/queries/useCompany'
+import { useBranches } from '@/hooks/queries/useBranch'
 import { cn } from '@/lib/utils'
 import { Check, ChevronsUpDown, Search } from 'lucide-react'
 import { useState } from 'react'
@@ -30,7 +30,7 @@ export function BranchSelector({
   disabled,
   companyId,
 }: BranchSelectorProps) {
-  const { data: companies = [] } = useCompanies()
+  const { data: companies = [] } = useBranches(companyId)
   const [open, setOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const selected = companies.find((c) => c.id === value)

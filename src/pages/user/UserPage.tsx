@@ -5,6 +5,7 @@ import {
   UserForm,
   UserTable,
 } from '@/components/features/user'
+import { ReassignBranchDialog } from '@/components/features/user/ReassignBranchDialog'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import {
   useCreateCompanyAdmin,
   useDeactivateUser,
   useDeleteUser,
+  useReassignBranch,
   useReassignCompany,
   useResetPassword,
   useUpdateUser,
@@ -41,6 +43,7 @@ import type { UserResponse } from '@/types/user.types'
 import {
   Building2,
   Eye,
+  GitBranch,
   KeyRound,
   Pencil,
   Plus,
@@ -63,12 +66,14 @@ export function UsersPage() {
   const activateUser = useActivateUser()
   const deactivateUser = useDeactivateUser()
   const reassignCompany = useReassignCompany()
+  const reassignBranch = useReassignBranch()
   const resetPassword = useResetPassword()
   const [formOpen, setFormOpen] = useState(false)
   const [detailUser, setDetailUser] = useState<UserResponse | null>(null)
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null)
   const [resetPasswordDialog, setResetPasswordDialog] = useState<UserResponse | null>(null)
-  const [reassignUser, setReassignUser] = useState<UserResponse | null>(null)
+  const [reassignUserCompany, setReassignUserCompany] = useState<UserResponse | null>(null)
+  const [reassignUserBranch, setReassignUserBranch] = useState<UserResponse | null>(null)
   const [toggleUserDialog, setToggleUserDialog] = useState<UserResponse | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<UserResponse | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -97,6 +102,7 @@ export function UsersPage() {
         { id: selectedUser.id, data: payload },
         { onSuccess: () => setFormOpen(false) },
       )
+      return
     }
 
     if (isSuperAdmin) {
@@ -107,6 +113,7 @@ export function UsersPage() {
 
     if (isCompanyAdmin) {
       const formData = data as CreateBranchAdminFormData
+      console.log({ formData })
       const payload = toCreateBranchAdmin(formData, formData.branchId)
       createBranchAdmin.mutate({ data: payload }, { onSuccess: () => setFormOpen(false) })
     }
@@ -131,7 +138,11 @@ export function UsersPage() {
   }
 
   const handleReassignCompany = (userId: number, companyId: number) => {
-    reassignCompany.mutate({ userId, companyId }, { onSuccess: () => setReassignUser(null) })
+    reassignCompany.mutate({ userId, companyId }, { onSuccess: () => setReassignUserCompany(null) })
+  }
+
+  const handleReassignBranch = (userId: number, branchId: number) => {
+    reassignBranch.mutate({ userId, branchId }, { onSuccess: () => setReassignUserCompany(null) })
   }
 
   const handleResetPassword = () => {
@@ -196,9 +207,16 @@ export function UsersPage() {
             </DropdownMenuItem>
 
             {isSuperAdmin && (
-              <DropdownMenuItem onClick={() => setReassignUser(user)}>
+              <DropdownMenuItem onClick={() => setReassignUserCompany(user)}>
                 <Building2 className="mr-2 size-4" />
                 Cambiar Empresa
+              </DropdownMenuItem>
+            )}
+
+            {isCompanyAdmin && (
+              <DropdownMenuItem onClick={() => setReassignUserBranch(user)}>
+                <GitBranch className="mr-2 size-4" />
+                Cambiar Sucursal
               </DropdownMenuItem>
             )}
 
@@ -257,11 +275,19 @@ export function UsersPage() {
       />
 
       <ReassignCompanyDialog
-        open={!!reassignUser}
-        onOpenChange={(open) => !open && setReassignUser(null)}
-        user={reassignUser}
+        open={!!reassignUserCompany}
+        onOpenChange={(open) => !open && setReassignUserCompany(null)}
+        user={reassignUserCompany}
         onConfirm={handleReassignCompany}
         loading={reassignCompany.isPending}
+      />
+
+      <ReassignBranchDialog
+        open={!!reassignUserBranch}
+        onOpenChange={(open) => !open && setReassignUserBranch(null)}
+        user={reassignUserBranch}
+        onConfirm={handleReassignBranch}
+        loading={reassignBranch.isPending}
       />
 
       <ConfirmDialog

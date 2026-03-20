@@ -8,61 +8,67 @@ import {
   useSystemConfig,
   useUpdateSystemConfig,
 } from '@/hooks/queries/useSystemConfig'
+import type { SystemConfigResponse } from '@/types/system_config.types'
 import { FileVideo, Folder, HardDrive, Loader2, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-// Constantes para las keys — un solo lugar a cambiar si el backend las renombra
 const CONFIG_KEY = {
-  STORAGE_PATH: 'video.storage.path',
-  MAX_SIZE_MB: 'video.max.size.mb',
-  ALLOWED_EXTENSIONS: 'video.allowed.extensions',
+  storagePath: 'video.storage.path',
+  maxSizeMb: 'video.max.size.mb',
+  allowedExtensions: 'video.allowed.extensions',
 } as const
 
-type ConfigFormData = Record<(typeof CONFIG_KEY)[keyof typeof CONFIG_KEY], string>
+type ConfigFormData = {
+  storagePath: string
+  maxSizeMb: string
+  allowedExtensions: string
+}
 
 export function SystemConfigPage() {
   const { data: configs = [], isLoading } = useSystemConfig()
   const updateConfig = useUpdateSystemConfig()
   const resetConfig = useResetSystemConfig()
 
-  // Un solo Map en lugar de 3 configs.find() repetidos en cada render
   const configMap = useMemo(() => new Map(configs.map((c) => [c.configKey, c])), [configs])
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { dirtyFields },
-  } = useForm<ConfigFormData>()
+  const { register, handleSubmit, reset } = useForm<ConfigFormData>()
 
   useEffect(() => {
     if (configs.length === 0) return
 
     reset({
-      [CONFIG_KEY.STORAGE_PATH]: configMap.get(CONFIG_KEY.STORAGE_PATH)?.configValue ?? '',
-      [CONFIG_KEY.MAX_SIZE_MB]: configMap.get(CONFIG_KEY.MAX_SIZE_MB)?.configValue ?? '',
-      [CONFIG_KEY.ALLOWED_EXTENSIONS]:
-        configMap.get(CONFIG_KEY.ALLOWED_EXTENSIONS)?.configValue ?? '',
+      storagePath: configMap.get(CONFIG_KEY.storagePath)?.configValue ?? '',
+      maxSizeMb: configMap.get(CONFIG_KEY.maxSizeMb)?.configValue ?? '',
+      allowedExtensions: configMap.get(CONFIG_KEY.allowedExtensions)?.configValue ?? '',
     })
   }, [configs, reset, configMap])
 
   const onSubmit = async (data: ConfigFormData) => {
-    const changedKeys = Object.keys(dirtyFields) as (keyof ConfigFormData)[]
+    const promises: Promise<SystemConfigResponse>[] = []
 
-    if (changedKeys.length === 0) {
+    Object.entries(CONFIG_KEY).forEach(([formKey, dbKey]) => {
+      const originalConfig = configMap.get(dbKey)
+      const newValue = data[formKey as keyof ConfigFormData]
+
+      if (originalConfig && originalConfig.configValue !== newValue) {
+        promises.push(
+          updateConfig.mutateAsync({ id: originalConfig.id, data: { configValue: newValue } }),
+        )
+      }
+    })
+
+    if (promises.length === 0) {
       toast.info('No hay cambios para guardar')
       return
     }
 
-    await Promise.all(
-      changedKeys.map((key) => {
-        const config = configMap.get(key)
-        if (!config) return Promise.resolve()
-        return updateConfig.mutateAsync({ id: config.id, data: { configValue: data[key] } })
-      }),
-    )
+    try {
+      await Promise.all(promises)
+    } catch (error) {
+      console.error('Error al guardar:', error)
+    }
   }
 
   const handleReset = (id?: number) => {
@@ -70,10 +76,10 @@ export function SystemConfigPage() {
   }
 
   const isDisabled = updateConfig.isPending || resetConfig.isPending
-  const hasChanges = Object.keys(dirtyFields).length > 0
-  const storagePathConfig = configMap.get(CONFIG_KEY.STORAGE_PATH)
-  const maxSizeConfig = configMap.get(CONFIG_KEY.MAX_SIZE_MB)
-  const extensionsConfig = configMap.get(CONFIG_KEY.ALLOWED_EXTENSIONS)
+
+  const storagePathConfig = configMap.get(CONFIG_KEY.storagePath)
+  const maxSizeConfig = configMap.get(CONFIG_KEY.maxSizeMb)
+  const extensionsConfig = configMap.get(CONFIG_KEY.allowedExtensions)
 
   if (isLoading) {
     return (
@@ -98,7 +104,7 @@ export function SystemConfigPage() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            <form id="system-config-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
               {storagePathConfig && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -110,10 +116,7 @@ export function SystemConfigPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleReset(storagePathConfig.id)}
-                      disabled={
-                        resetConfig.isPending ||
-                        storagePathConfig.configValue === storagePathConfig.defaultValue
-                      }
+                      disabled={isDisabled}
                       className="text-muted-foreground hover:text-foreground h-8 text-xs"
                     >
                       <RotateCcw className="mr-2 size-3" />
@@ -128,7 +131,7 @@ export function SystemConfigPage() {
                       id="storage-path"
                       className="pl-10"
                       disabled={isDisabled}
-                      {...register(CONFIG_KEY.STORAGE_PATH)}
+                      {...register('storagePath')}
                     />
                   </div>
                   <p className="text-muted-foreground text-sm">{storagePathConfig.description}</p>
@@ -146,10 +149,7 @@ export function SystemConfigPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleReset(maxSizeConfig.id)}
-                      disabled={
-                        resetConfig.isPending ||
-                        maxSizeConfig.configValue === maxSizeConfig.defaultValue
-                      }
+                      disabled={isDisabled}
                       className="text-muted-foreground hover:text-foreground h-8 text-xs"
                     >
                       <RotateCcw className="mr-2 size-3" />
@@ -165,7 +165,7 @@ export function SystemConfigPage() {
                       type="number"
                       className="pr-12 pl-10"
                       disabled={isDisabled}
-                      {...register(CONFIG_KEY.MAX_SIZE_MB)}
+                      {...register('maxSizeMb')}
                     />
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                       <span className="text-muted-foreground text-sm font-medium">MB</span>
@@ -186,10 +186,7 @@ export function SystemConfigPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleReset(extensionsConfig.id)}
-                      disabled={
-                        resetConfig.isPending ||
-                        extensionsConfig.configValue === extensionsConfig.defaultValue
-                      }
+                      disabled={isDisabled}
                       className="text-muted-foreground hover:text-foreground h-8 text-xs"
                     >
                       <RotateCcw className="mr-2 size-3" />
@@ -204,7 +201,7 @@ export function SystemConfigPage() {
                       id="allowed-extensions"
                       className="pl-10"
                       disabled={isDisabled}
-                      {...register(CONFIG_KEY.ALLOWED_EXTENSIONS)}
+                      {...register('allowedExtensions')}
                     />
                   </div>
                   <p className="text-muted-foreground text-sm">{extensionsConfig.description}</p>
@@ -212,7 +209,12 @@ export function SystemConfigPage() {
               )}
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isDisabled || !hasChanges}>
+                <Button
+                  type="submit"
+                  form="system-config-form"
+                  disabled={isDisabled}
+                  className="bg-primary"
+                >
                   {updateConfig.isPending ? (
                     <>
                       <Loader2 className="mr-2 size-4 animate-spin" />

@@ -2,8 +2,10 @@ import api from '@/lib/axios'
 import type { BranchResponse, CreateBranchRequest, UpdateBranchRequest } from '@/types/branch.types'
 
 export const branchService = {
-  findAll: async (): Promise<BranchResponse[]> => {
-    const response = await api.get<BranchResponse[]>('/branch')
+  findAll: async (companyId?: number): Promise<BranchResponse[]> => {
+    const response = await api.get<BranchResponse[]>('/branch', {
+      params: companyId ? { companyId } : undefined,
+    })
     return response.data
   },
 

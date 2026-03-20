@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ROUTES } from '@/constants/routes'
 import {
   useActivateCompany,
   useCompanies,
@@ -20,6 +21,7 @@ import {
   useDeleteCompany,
   useUpdateCompany,
 } from '@/hooks/queries/useCompany'
+import { buildRoute } from '@/lib/route-builder'
 import type { CreateCompanyFormData, UpdateCompanyFormData } from '@/schemas/company.schema'
 import type { CompanyResponse } from '@/types/company.types'
 import { Eye, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
@@ -123,7 +125,11 @@ export function CompanyPage() {
         }
         renderActions={(company) => (
           <>
-            <DropdownMenuItem onClick={() => navigate(`/empresas/${company.id}`)}>
+            <DropdownMenuItem
+              onClick={() =>
+                navigate(buildRoute(ROUTES.ADMINISTRATOR.COMPANY_DETAIL, { id: company.id }))
+              }
+            >
               <Eye className="mr-2 size-4" />
               Ver Detalle
             </DropdownMenuItem>

@@ -14,20 +14,9 @@ export interface CompanyResponse {
   updatedAt: string
 }
 
-export interface CompanyDetail {
-  id: number
-  name: string
-  ruc: string | null
-  direction: string | null
-  phone: string | null
-  email: string | null
-  logo: string | null
-  isActive: boolean
-  totalBranches: number
-  totalVideos: number
+export interface CompanyDetail extends CompanyResponse {
   administrators: UserResponse[]
   branches: BranchResponse[]
-  createdAt: string
 }
 
 export interface CreateCompanyRequest {

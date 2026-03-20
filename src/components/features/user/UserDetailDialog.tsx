@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -70,12 +70,7 @@ export function UserDetailDialog({ open, onOpenChange, user }: UserDetailsDialog
               <p className="text-muted-foreground pt-1 text-sm">@{user.username}</p>
             </div>
             <div className="ml-auto">
-              <Badge
-                variant={user.isActive ? 'default' : 'destructive'}
-                className={user.isActive ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
-              >
-                {user.isActive ? 'Activo' : 'Inactivo'}
-              </Badge>
+              <StatusBadge isActive={user.isActive} />
             </div>
           </div>
 

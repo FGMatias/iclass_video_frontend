@@ -1,45 +1,91 @@
 import { toCreateBranch, toUpdateBranch } from '@/adapters/branch.adapter'
+import { toUpdateCompany } from '@/adapters/company.adapter'
 import { toCreateCompanyAdmin, toUpdateUser } from '@/adapters/user.adapter'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
-import { useCreateBranch, useUpdateBranch } from '@/hooks/queries/useBranch'
-import { useDetailCompany } from '@/hooks/queries/useCompany'
-import { useCreateCompanyAdmin, useUpdateUser } from '@/hooks/queries/useUser'
+import { ROUTES } from '@/constants/routes'
+import {
+  useActivateBranch,
+  useCreateBranch,
+  useDeactivateBranch,
+  useUpdateBranch,
+} from '@/hooks/queries/useBranch'
+import { useDetailCompany, useUpdateCompany } from '@/hooks/queries/useCompany'
+import {
+  useActivateUser,
+  useCreateCompanyAdmin,
+  useDeactivateUser,
+  useResetPassword,
+  useUpdateUser,
+} from '@/hooks/queries/useUser'
 import { getInitials } from '@/lib/utils'
 import type { CreateBranchFormData, UpdateBranchFormData } from '@/schemas/branch.schema'
+import type { UpdateCompanyFormData } from '@/schemas/company.schema'
 import {
   createCompanyAdminSchema,
   updateUserSchema,
   type CreateCompanyAdminFormData,
   type UpdateUserFormData,
 } from '@/schemas/user.schema'
+import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
 import type { BranchResponse } from '@/types/branch.types'
+import type { CompanyResponse } from '@/types/company.types'
 import type { UserResponse } from '@/types/user.types'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ArrowLeft, KeyRound, Loader2, Pencil, Plus, ShieldCheck, ShieldOff } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { BranchForm } from '../branch/BranchForm'
 import { BranchTable } from '../branch/BranchTable'
 import { UserForm, UserTable } from '../user'
+import { CompanyForm } from './CompanyForm'
 
 export function CompanyDetailPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const companyId = id ? parseInt(id, 10) : undefined
   const { data: company, isLoading, isError } = useDetailCompany(companyId)
+  const [companyFormOpen, setCompanyFormOpen] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState<CompanyResponse | null>(null)
   const [adminFormOpen, setAdminFormOpen] = useState(false)
   const [selectedAdmin, setSelectedAdmin] = useState<UserResponse | null>(null)
+  const [toggleUserDialog, setToggleUserDialog] = useState<UserResponse | null>(null)
+  const [resetPasswordDialog, setResetPasswordDialog] = useState<UserResponse | null>(null)
   const [branchFormOpen, setBranchFormOpen] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState<BranchResponse | null>(null)
+  const [toggleBranchDialog, setToggleBranchDialog] = useState<BranchResponse | null>(null)
+  const updateCompany = useUpdateCompany()
   const createUser = useCreateCompanyAdmin(companyId)
   const updateUser = useUpdateUser(companyId)
+  const resetPassword = useResetPassword()
+  const activateUser = useActivateUser()
+  const deactivateUser = useDeactivateUser()
   const createBranch = useCreateBranch(companyId)
   const updateBranch = useUpdateBranch(companyId)
+  const activateBranch = useActivateBranch()
+  const deactivateBranch = useDeactivateBranch()
+  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
+
+  useEffect(() => {
+    if (company?.name) {
+      setCustomBreadcrumbs([
+        { label: 'Empresa', path: ROUTES.ADMINISTRATOR.COMPANY },
+        { label: company.name },
+      ])
+    }
+
+    return () => setCustomBreadcrumbs(null)
+  }, [company?.name, setCustomBreadcrumbs])
+
+  const handleEditCompany = (company: CompanyResponse) => {
+    setSelectedCompany(company)
+    setCompanyFormOpen(true)
+  }
 
   const handleEditAdmin = (admin: UserResponse) => {
     setSelectedAdmin(admin)
@@ -49,6 +95,16 @@ export function CompanyDetailPage() {
   const handleEditBranch = (branch: BranchResponse) => {
     setSelectedBranch(branch)
     setBranchFormOpen(true)
+  }
+
+  const handleCompanyFormSubmit = (data: UpdateCompanyFormData) => {
+    if (selectedCompany) {
+      const payload = toUpdateCompany(data as UpdateCompanyFormData, selectedCompany)
+      updateCompany.mutate(
+        { id: selectedCompany.id, data: payload },
+        { onSuccess: () => setCompanyFormOpen(false) },
+      )
+    }
   }
 
   const handleAdminFormSubmit = (data: CreateCompanyAdminFormData | UpdateUserFormData) => {
@@ -70,6 +126,25 @@ export function CompanyDetailPage() {
     )
   }
 
+  const handleResetPassword = () => {
+    if (!resetPasswordDialog) return
+
+    resetPassword.mutate(
+      { id: resetPasswordDialog.id },
+      { onSuccess: () => setResetPasswordDialog(null) },
+    )
+  }
+
+  const handleConfirmToggleUser = () => {
+    if (!toggleUserDialog) return
+
+    if (toggleUserDialog.isActive) {
+      deactivateUser.mutate(toggleUserDialog.id, { onSuccess: () => setToggleUserDialog(null) })
+    } else {
+      activateUser.mutate(toggleUserDialog.id, { onSuccess: () => setToggleUserDialog(null) })
+    }
+  }
+
   const handleBranchFormSubmit = (data: CreateBranchFormData | UpdateBranchFormData) => {
     if (selectedBranch) {
       const payload = toUpdateBranch(data as UpdateBranchFormData, selectedBranch)
@@ -84,6 +159,22 @@ export function CompanyDetailPage() {
     createBranch.mutate({ data: payload }, { onSuccess: () => setBranchFormOpen(false) })
   }
 
+  const handleConfirmToggleBranch = () => {
+    if (!toggleBranchDialog) return
+
+    if (toggleBranchDialog.isActive) {
+      deactivateBranch.mutate(
+        { id: toggleBranchDialog.id },
+        { onSuccess: () => setToggleBranchDialog(null) },
+      )
+    } else {
+      activateBranch.mutate(
+        { id: toggleBranchDialog.id },
+        { onSuccess: () => setToggleBranchDialog(null) },
+      )
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -96,7 +187,7 @@ export function CompanyDetailPage() {
     return (
       <div className="flex h-[50vh] flex-col items-center justify-center space-y-4">
         <p className="text-muted-foreground">Error al cargar los detalles de la empresa.</p>
-        <Button onClick={() => navigate('/empresas')}>Volver a Empresas</Button>
+        <Button onClick={() => navigate(ROUTES.ADMINISTRATOR.COMPANY)}>Volver a Empresas</Button>
       </div>
     )
   }
@@ -105,12 +196,16 @@ export function CompanyDetailPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/empresas')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(ROUTES.ADMINISTRATOR.COMPANY)}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">Detalle de Empresa</h1>
         </div>
-        <Button variant="outline">
+        <Button onClick={() => handleEditCompany(company)} variant="outline">
           <Pencil className="mr-2 size-4" />
           Editar Empresa
         </Button>
@@ -192,12 +287,12 @@ export function CompanyDetailPage() {
                 <Pencil className="mr-2 size-4" />
                 Editar
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => console.log('Reset Password', admin.id)}>
+              <DropdownMenuItem onClick={() => setResetPasswordDialog(admin)}>
                 <KeyRound className="mr-2 size-4" />
                 Resetear Contraseña
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => console.log('Toggle status', admin.id)}>
+              <DropdownMenuItem onClick={() => setToggleUserDialog(admin)}>
                 {admin.isActive ? (
                   <>
                     <ShieldOff className="text-destructive mr-2 size-4" />
@@ -242,7 +337,7 @@ export function CompanyDetailPage() {
                 Editar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => console.log('Toggle branch status', branch.id)}>
+              <DropdownMenuItem onClick={() => setToggleBranchDialog(branch)}>
                 {branch.isActive ? (
                   <>
                     <ShieldOff className="text-destructive mr-2 size-4" />
@@ -259,6 +354,14 @@ export function CompanyDetailPage() {
           )}
         />
       </div>
+
+      <CompanyForm
+        open={companyFormOpen}
+        onOpenChange={setCompanyFormOpen}
+        company={selectedCompany}
+        onSubmit={handleCompanyFormSubmit}
+        isLoading={updateCompany.isPending}
+      />
 
       <UserForm
         open={adminFormOpen}
@@ -278,6 +381,59 @@ export function CompanyDetailPage() {
         branch={selectedBranch}
         onSubmit={handleBranchFormSubmit}
         isLoading={createBranch.isPending || updateBranch.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!resetPasswordDialog}
+        onOpenChange={(open) => !open && setResetPasswordDialog(null)}
+        title="Reestablecer contraseña"
+        description={`¿Estás seguro de reestablecer la contraseña de ${resetPasswordDialog?.name ?? ''}? Esta acción no se puede deshacer.`}
+        onConfirm={handleResetPassword}
+        confirmLabel="Reestablecer"
+        variant="destructive"
+        loading={resetPassword.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!toggleUserDialog}
+        onOpenChange={(open) => !open && setToggleUserDialog(null)}
+        title={
+          toggleUserDialog
+            ? `¿${toggleUserDialog.isActive ? 'Desactivar' : 'Activar'} a ${toggleUserDialog.name}`
+            : ''
+        }
+        description={
+          toggleUserDialog
+            ? toggleUserDialog.isActive
+              ? `Al desactivar a ${toggleUserDialog.name}, no podrá acceder a la plataforma`
+              : `Al activar a ${toggleUserDialog.name}, recuperará el acceso inmediatamente`
+            : ''
+        }
+        onConfirm={handleConfirmToggleUser}
+        confirmLabel={toggleUserDialog?.isActive ? 'Desactivar' : 'Activar'}
+        variant={toggleUserDialog?.isActive ? 'destructive' : 'default'}
+        loading={activateUser.isPending || deactivateUser.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!toggleBranchDialog}
+        onOpenChange={(open) => !open && setToggleBranchDialog(null)}
+        title={
+          toggleBranchDialog
+            ? `¿${toggleBranchDialog.isActive ? 'Desactivar' : 'Activar'} a ${toggleBranchDialog.name}`
+            : ''
+        }
+        description={
+          toggleBranchDialog
+            ? toggleBranchDialog.isActive
+              ? `Al desactivar a ${toggleBranchDialog.name}, sus administradores no podrán acceder al sistema`
+              : `Al activar a ${toggleBranchDialog.name}, recuperarán el acceso al sistema`
+            : ''
+        }
+        onConfirm={handleConfirmToggleBranch}
+        confirmLabel={toggleBranchDialog?.isActive ? 'Desactivar' : 'Activar'}
+        variant={toggleBranchDialog?.isActive ? 'destructive' : 'default'}
+        loading={activateBranch.isPending || deactivateBranch.isPending}
       />
     </div>
   )
