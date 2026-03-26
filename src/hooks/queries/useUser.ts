@@ -11,6 +11,11 @@ import { useAuth } from '../useAuth'
 import { BRANCH_DETAIL_KEY } from './useBranch'
 import { COMPANY_DETAIL_KEY } from './useCompany'
 
+interface UserQueryOptions {
+  companyId?: number
+  branchId?: number
+}
+
 export const USERS_KEYS = ['users']
 export const CURRENT_USER_KEY = 'currentUser'
 
@@ -68,8 +73,9 @@ export function useCreateBranchAdmin(branchId?: number) {
   })
 }
 
-export function useUpdateUser(companyId?: number) {
+export function useUpdateUser(options: UserQueryOptions = {}) {
   const qc = useQueryClient()
+  const { companyId, branchId } = options
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateUserRequest }) =>
@@ -80,6 +86,10 @@ export function useUpdateUser(companyId?: number) {
 
       if (companyId) {
         qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, companyId] })
+      }
+
+      if (branchId) {
+        qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
       }
     },
     onError: () => toast.error('Error al actualizar el usuario'),
@@ -99,27 +109,35 @@ export function useDeleteUser() {
   })
 }
 
-export function useActivateUser() {
+export function useActivateUser(options: UserQueryOptions = {}) {
   const qc = useQueryClient()
+  const { companyId, branchId } = options
 
   return useMutation({
     mutationFn: userService.activate,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: USERS_KEYS })
       toast.success('Usuario activado correctamente')
+
+      if (companyId) qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, companyId] })
+      if (branchId) qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
     },
     onError: () => toast.error('Error al activar el usuario'),
   })
 }
 
-export function useDeactivateUser() {
+export function useDeactivateUser(options: UserQueryOptions = {}) {
   const qc = useQueryClient()
+  const { companyId, branchId } = options
 
   return useMutation({
     mutationFn: userService.deactivate,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: USERS_KEYS })
       toast.success('Usuario desactivado correctamente')
+
+      if (companyId) qc.invalidateQueries({ queryKey: [COMPANY_DETAIL_KEY, companyId] })
+      if (branchId) qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
     },
     onError: () => toast.error('Error al desactivar el usuario'),
   })

@@ -1,11 +1,11 @@
 import { toCreateBranchAdmin, toCreateCompanyAdmin, toUpdateUser } from '@/adapters/user.adapter'
 import {
+  ReassignBranchDialog,
   ReassignCompanyDialog,
   UserDetailDialog,
   UserForm,
   UserTable,
 } from '@/components/features/user'
-import { ReassignBranchDialog } from '@/components/features/user/ReassignBranchDialog'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
@@ -54,7 +54,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-export function UsersPage() {
+export function UserPage() {
   const { user } = useAuth()
   const { data: currentUserProfile } = useCurrentUser()
   const roleFilter = user ? MANAGED_ROLE_BY_USER_ROL[user.roleId] : undefined

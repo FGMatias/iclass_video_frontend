@@ -1,3 +1,4 @@
+import { queryClient } from '@/providers/QueryProvider'
 import type { AuthUser, UserAuthResponse } from '@/types/auth.types'
 
 const TOKEN_KEY = 'iclass_token'
@@ -66,6 +67,8 @@ export const useAuthStore = {
 
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+
+    queryClient.clear()
 
     notifyListeners()
   },

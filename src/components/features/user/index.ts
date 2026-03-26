@@ -1,3 +1,4 @@
+export { ReassignBranchDialog } from './ReassignBranchDialog'
 export { ReassignCompanyDialog } from './ReassignCompanyDialog'
 export { UserDetailDialog } from './UserDetailDialog'
 export { UserForm } from './UserForm'
