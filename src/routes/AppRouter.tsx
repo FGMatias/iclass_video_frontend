@@ -1,11 +1,15 @@
+import { AreaDetailPage } from '@/components/features/area/AreaDetailPage'
+import { BranchDetailPage } from '@/components/features/branch/BranchDetailPage'
 import { CompanyDetailPage } from '@/components/features/company/CompanyDetailPage'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ROLES } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
+import { BranchPage } from '@/pages/branch/BranchPage'
 import { CompanyPage } from '@/pages/company/CompanyPage'
 import { SystemConfigPage } from '@/pages/configuration/SystemConfigPage'
 import { LoginPage } from '@/pages/login/LoginPage'
-import { UsersPage } from '@/pages/user/UserPage'
+import { UserPage } from '@/pages/user/UserPage'
+import { VideoPage } from '@/pages/video/VideoPage'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RoleRoute } from './RoleAuth'
@@ -31,7 +35,7 @@ const router = createBrowserRouter([
             children: [
               {
                 path: ROUTES.ADMINISTRATOR.USER,
-                element: <UsersPage />,
+                element: <UserPage />,
                 handle: { group: 'GESTIÓN', title: 'Usuarios' },
               },
               {
@@ -56,22 +60,27 @@ const router = createBrowserRouter([
             children: [
               {
                 path: ROUTES.COMPANY_ADMINISTRATOR.USER,
-                element: <UsersPage />,
-                handle: { group: 'GESTIÓN', title: 'Usuarios de Empresa' },
+                element: <UserPage />,
+                handle: { group: 'GESTIÓN', title: 'Usuarios' },
               },
               {
                 path: ROUTES.COMPANY_ADMINISTRATOR.BRANCH,
-                element: <Placeholder titulo="Sucursales" />,
+                element: <BranchPage />,
                 handle: { group: 'GESTIÓN', title: 'Sucursales' },
               },
               {
                 path: ROUTES.COMPANY_ADMINISTRATOR.BRANCH_DETAIL,
-                element: <Placeholder titulo="Detalle Sucursal" />,
+                element: <BranchDetailPage />,
                 handle: { group: 'GESTIÓN', title: 'Detalle Sucursal' },
               },
               {
+                path: ROUTES.COMPANY_ADMINISTRATOR.AREA_DETAIL,
+                element: <AreaDetailPage />,
+                handle: { group: 'GESTIÓN', title: 'Detalle Área' },
+              },
+              {
                 path: ROUTES.COMPANY_ADMINISTRATOR.VIDEO,
-                element: <Placeholder titulo="Video" />,
+                element: <VideoPage />,
                 handle: { group: 'GESTIÓN', title: 'Videos' },
               },
             ],

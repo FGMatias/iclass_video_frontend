@@ -9,14 +9,14 @@ export const ROUTES = {
   COMPANY_ADMINISTRATOR: {
     USER: '/empresa/usuario',
     BRANCH: '/empresa/sucursal',
-    BRANCH_DETAIL: '/empresa/sucursal/:id',
-    AREA_DETAIL: '/empresa/sucursal/:id/area/:id',
+    BRANCH_DETAIL: '/empresa/sucursal/:branchId',
+    AREA_DETAIL: '/empresa/sucursal/:branchId/area/:areaId',
     VIDEO: '/empresa/video',
   },
   BRANCH_ADMINISTRATOR: {
     VIDEO: '/sucursal/video',
     AREA: '/sucursal/area',
-    AREA_DETAIL: '/sucursal/area/:id',
+    AREA_DETAIL: '/sucursal/area/:areaId',
     DEVICE: '/sucursal/dispositivo',
     CONFIGURATION: '/sucursal/configuracion',
   },
