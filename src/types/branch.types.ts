@@ -1,3 +1,6 @@
+import type { AreaResponse } from './area.types'
+import type { UserResponse } from './user.types'
+
 export interface BranchResponse {
   id: number
   companyId: number
@@ -8,6 +11,11 @@ export interface BranchResponse {
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface BranchDetail extends BranchResponse {
+  administrators: UserResponse[]
+  areas: AreaResponse[]
 }
 
 export interface CreateBranchRequest {

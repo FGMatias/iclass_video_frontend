@@ -39,7 +39,7 @@ export const companyService = {
   activate: async (id: number): Promise<void> => {
     await api.put(`/company/${id}/activate`)
   },
-
+ 
   deactivate: async (id: number): Promise<void> => {
     await api.put(`/company/${id}/deactivate`)
   },

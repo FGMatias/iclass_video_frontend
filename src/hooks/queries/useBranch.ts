@@ -14,6 +14,14 @@ export function useBranches(companyId?: number) {
   })
 }
 
+export function useDetailBranch(id: number | undefined) {
+  return useQuery({
+    queryKey: [BRANCH_DETAIL_KEY, id],
+    queryFn: () => branchService.detail(id!),
+    enabled: !!id,
+  })
+}
+
 export function useCreateBranch(companyId?: number) {
   const qc = useQueryClient()
 
@@ -37,8 +45,9 @@ export function useUpdateBranch(companyId?: number) {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateBranchRequest }) =>
       branchService.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: BRANCHES_KEYS })
+      qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, variables.id] })
       toast.success('Sucursal editada correctamente')
 
       if (companyId) {
