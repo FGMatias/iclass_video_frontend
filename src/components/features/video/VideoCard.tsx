@@ -1,23 +1,18 @@
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import type { VideoResponse } from '@/types/video.types' // Importa tu tipo real
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { formatDuration } from '@/lib/utils'
+import type { VideoResponse } from '@/types/video.types'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Clock } from 'lucide-react'
-
-// ✅ Helper para convertir segundos a MM:SS o HH:MM:SS
-function formatDuration(seconds: number | null): string {
-  if (!seconds) return '00:00'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-
-  const paddedM = m.toString().padStart(2, '0')
-  const paddedS = s.toString().padStart(2, '0')
-
-  if (h > 0) return `${h}:${paddedM}:${paddedS}`
-  return `${paddedM}:${paddedS}`
-}
+import { Clock, MoreVertical, Pencil, Play, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
 
 interface VideoCardProps {
   video: VideoResponse
@@ -29,43 +24,85 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onEdit, onToggleStatus, onDelete, onPlay }: VideoCardProps) {
   return (
-    <Card className="group border-border/50 flex flex-col overflow-hidden transition-all hover:shadow-md">
-      {/* Opciones Superiores (Dropdown) */}
-      {/* ... (El Dropdown se mantiene igual) ... */}
-
-      {/* Thumbnail */}
+    <Card className="group flex flex-col overflow-hidden transition-all hover:shadow-md">
       <div className="bg-muted relative aspect-video w-full overflow-hidden">
+        <div className="absolute top-2 right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 focus-visible:ring-0"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onEdit(video)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar Información
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onToggleStatus(video)}>
+                {video.isActive ? (
+                  <>
+                    <ShieldOff className="text-destructive mr-2 h-4 w-4" />
+                    <span className="text-destructive">Desactivar</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Activar
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onDelete(video)}
+                className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         <img
-          src={video.thumbnail || '/placeholder-video.jpg'} // Fallback si no hay imagen
+          src={video.thumbnail || '/placeholder-video.jpg'}
           alt={video.name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        {/* ... (Botón play se mantiene igual) ... */}
+
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            onClick={() => onPlay?.(video)}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-colors hover:bg-white/30"
+          >
+            <Play className="ml-1 h-6 w-6 fill-white text-white" />
+          </button>
+        </div>
       </div>
 
-      {/* Content */}
-      <CardContent className="flex flex-1 flex-col gap-2 p-4">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-sm leading-tight font-bold" title={video.name}>
-            {video.name}
-          </h3>
-        </div>
+      <CardContent className="flex flex-1 flex-col gap-3 p-4">
+        <h3 className="line-clamp-2 text-lg leading-tight font-semibold" title={video.name}>
+          {video.name}
+        </h3>
 
-        <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
-          <span className="bg-muted rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span className="bg-secondary text-secondary-foreground rounded px-1.5 py-0.5 font-semibold uppercase">
             {video.fileExtension}
           </span>
           <span>•</span>
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {/* ✅ Aquí usamos el helper para mostrar 05:20 en lugar de 320 */}
+          <div className="flex items-center gap-1 text-sm font-medium">
+            <Clock className="h-3.5 w-3.5" />
             {formatDuration(video.duration)}
           </div>
         </div>
 
-        <div className="mt-auto flex items-center justify-between pt-4">
+        <div className="mt-auto flex items-center justify-between pt-2">
           <StatusBadge isActive={video.isActive} />
-          <span className="text-muted-foreground text-[10px] font-medium">
+          <span className="text-muted-foreground text-sm font-medium">
             {format(new Date(video.createdAt), 'dd MMM yyyy', { locale: es })}
           </span>
         </div>

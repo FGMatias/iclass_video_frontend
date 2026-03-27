@@ -1,5 +1,8 @@
+import { toUploadVideo } from '@/adapters/video.adapter'
 import { VideoCard } from '@/components/features/video/VideoCard'
+import { VideoForm } from '@/components/features/video/VideoForm'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,9 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ROUTES } from '@/constants/routes'
+import { useCurrentUser } from '@/hooks/queries/useUser'
+import { useUpdateVideo, useUploadVideo, useVideoUploadConstraints } from '@/hooks/queries/useVideo'
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
 import type { VideoResponse } from '@/types/video.types'
-import { Search, Upload } from 'lucide-react'
+import { Search, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 // --- Mock Data ---
@@ -23,7 +28,7 @@ const MOCK_VIDEOS: VideoResponse[] = [
     companyName: 'Empresa Demo',
     name: 'Introducción a la Plataforma',
     fileExtension: 'mp4',
-    duration: 320, // 5 minutos * 60 + 20 = 320 segundos
+    duration: 320,
     fileSize: 15400000,
     checksum: 'abc123hash',
     urlVideo: null,
@@ -38,7 +43,7 @@ const MOCK_VIDEOS: VideoResponse[] = [
     companyName: 'Empresa Demo',
     name: 'Tutorial de Seguridad Básica',
     fileExtension: 'mov',
-    duration: 765, // 12:45
+    duration: 765,
     fileSize: 25400000,
     checksum: 'def456hash',
     urlVideo: null,
@@ -53,7 +58,7 @@ const MOCK_VIDEOS: VideoResponse[] = [
     companyName: 'Empresa Demo',
     name: 'Campaña Marketing Q3 2024',
     fileExtension: 'mp4',
-    duration: 90, // 01:30
+    duration: 90,
     fileSize: 8400000,
     checksum: 'ghi789hash',
     urlVideo: null,
@@ -66,24 +71,24 @@ const MOCK_VIDEOS: VideoResponse[] = [
 
 export function VideoPage() {
   const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
-
-  // -- Estados de Filtros --
+  const { data: currentUserProfile } = useCurrentUser()
+  const { data: constraints } = useVideoUploadConstraints()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [extensionFilter, setExtensionFilter] = useState('all')
-
-  // -- Estados de Diálogos/Formularios (Preparados para tu lógica real) --
   const [formOpen, setFormOpen] = useState(false)
   const [selectedVideo, setSelectedVideo] = useState<VideoResponse | null>(null)
   const [toggleDialog, setToggleDialog] = useState<VideoResponse | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<VideoResponse | null>(null)
+  const currentUserCompanyId = currentUserProfile?.assignment?.companyId
+  const uploadVideo = useUploadVideo()
+  const updateVideo = useUpdateVideo()
 
   useEffect(() => {
     setCustomBreadcrumbs([{ label: 'Videos', path: ROUTES.COMPANY_ADMINISTRATOR.VIDEO }])
     return () => setCustomBreadcrumbs(null)
   }, [setCustomBreadcrumbs])
 
-  // Lógica de filtrado
   const filteredVideos = MOCK_VIDEOS.filter((video) => {
     const matchesSearch = video.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus =
@@ -94,6 +99,8 @@ export function VideoPage() {
         : video.fileExtension.toLowerCase() === extensionFilter.toLowerCase()
     return matchesSearch && matchesStatus && matchesExtension
   })
+
+  const isFiltered = searchTerm.length > 0 || statusFilter !== 'all' || extensionFilter !== 'all'
 
   const handleClearFilters = () => {
     setSearchTerm('')
@@ -109,89 +116,85 @@ export function VideoPage() {
 
   const handleConfirmToggle = () => {
     if (!toggleDialog) return
-    // TODO: Llamar a tu mutación useActivateVideo o useDeactivateVideo
     console.log(toggleDialog.isActive ? 'Desactivando...' : 'Activando...', toggleDialog.id)
     setToggleDialog(null)
   }
 
   const handleConfirmDelete = () => {
     if (!deleteDialog) return
-    // TODO: Llamar a tu mutación useDeleteVideo
     console.log('Eliminando...', deleteDialog.id)
     setDeleteDialog(null)
   }
 
   return (
     <div className="space-y-6">
-      {/* CABECERA */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col space-y-1.5">
-          <h2 className="text-foreground text-2xl font-bold tracking-tight">
-            Biblioteca de Videos
-          </h2>
-          <p className="text-muted-foreground">Gestiona y visualiza el catálogo de contenidos</p>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* CABECERA ESTANDARIZADA */}
+      <PageHeader
+        title="Biblioteca de Videos"
+        description="Gestiona y visualiza el catálogo de contenidos"
+        actions={
           <Button
             onClick={() => {
               setSelectedVideo(null)
               setFormOpen(true)
             }}
           >
-            <Upload className="mr-2 h-4 w-4" /> Subir Video
+            <Upload className="mr-2 h-4 w-4" />
+            Subir Video
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* BARRA DE FILTROS */}
-      <div className="border-border/50 flex flex-col items-start justify-between gap-4 border-b py-4 md:flex-row md:items-center">
-        <div className="flex w-full flex-1 flex-col items-start gap-3 md:w-auto md:flex-row md:items-center">
-          <div className="relative w-full md:w-[320px]">
-            <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+      {/* BARRA DE FILTROS ESTILO SHADCN DATATABLE */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="relative max-w-sm flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               placeholder="Buscar videos..."
-              className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
             />
           </div>
-          <div className="w-full md:w-[150px]">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Activo</SelectItem>
-                <SelectItem value="inactive">Inactivo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="w-full md:w-[150px]">
-            <Select value={extensionFilter} onValueChange={setExtensionFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Extensión" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="mp4">MP4</SelectItem>
-                <SelectItem value="mov">MOV</SelectItem>
-                <SelectItem value="mkv">MKV</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="inactive">Inactivo</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={extensionFilter} onValueChange={setExtensionFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Extensión" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="mp4">MP4</SelectItem>
+              <SelectItem value="mov">MOV</SelectItem>
+              <SelectItem value="mkv">MKV</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {isFiltered && (
+            <Button
+              variant="ghost"
+              onClick={handleClearFilters}
+              className="text-muted-foreground h-8 px-2 lg:px-3"
+            >
+              Limpiar
+              <X className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
-        <Button
-          variant="ghost"
-          onClick={handleClearFilters}
-          className="text-muted-foreground w-full md:w-auto"
-        >
-          Limpiar Filtros
-        </Button>
       </div>
 
-      {/* GRID LAYOUT DE VIDEOS */}
-      <div className="grid grid-cols-1 gap-6 pb-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredVideos.map((video) => (
           <VideoCard
             key={video.id}
@@ -204,13 +207,31 @@ export function VideoPage() {
         ))}
 
         {filteredVideos.length === 0 && (
-          <div className="text-muted-foreground bg-muted/20 col-span-full rounded-lg border border-dashed py-12 text-center">
+          <div className="text-muted-foreground col-span-full rounded-lg border border-dashed py-12 text-center">
             No se encontraron videos con los filtros aplicados.
           </div>
         )}
       </div>
 
-      {/* DIÁLOGOS DE CONFIRMACIÓN (Consistentes con el resto de la app) */}
+      <VideoForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        video={selectedVideo}
+        constraints={constraints}
+        isLoading={uploadVideo.isPending || updateVideo.isPending}
+        onSubmit={(data) => {
+          if (selectedVideo) {
+            updateVideo.mutate(
+              { id: selectedVideo.id, data: { name: data.name } },
+              { onSuccess: () => setFormOpen(false) },
+            )
+          } else {
+            const formData = toUploadVideo(data, currentUserCompanyId!)
+            uploadVideo.mutate(formData, { onSuccess: () => setFormOpen(false) })
+          }
+        }}
+      />
+
       <ConfirmDialog
         open={!!toggleDialog}
         onOpenChange={(open) => !open && setToggleDialog(null)}
@@ -234,8 +255,6 @@ export function VideoPage() {
         confirmLabel="Eliminar"
         variant="destructive"
       />
-
-      {/* TODO: Aquí iría tu <VideoForm open={formOpen} ... /> */}
     </div>
   )
 }
