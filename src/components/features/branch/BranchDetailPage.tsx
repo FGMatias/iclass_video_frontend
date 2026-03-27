@@ -425,6 +425,27 @@ export function BranchDetailPage() {
         variant={toggleUserDialog?.isActive ? 'destructive' : 'default'}
         loading={activateUser.isPending || deactivateUser.isPending}
       />
+
+      <ConfirmDialog
+        open={!!toggleAreaDialog}
+        onOpenChange={(open) => !open && setToggleAreaDialog(null)}
+        title={
+          toggleAreaDialog
+            ? `¿${toggleAreaDialog.isActive ? 'Desactivar' : 'Activar'} el área ${toggleAreaDialog.name}?`
+            : ''
+        }
+        description={
+          toggleAreaDialog
+            ? toggleAreaDialog.isActive
+              ? `Al desactivar "${toggleAreaDialog.name}", los dispositivos vinculados a esta zona podrían dejar de reproducir la playlist asignada.`
+              : `Al activar "${toggleAreaDialog.name}", los dispositivos vinculados reanudarán la reproducción del contenido.`
+            : ''
+        }
+        onConfirm={handleConfirmToggleArea}
+        confirmLabel={toggleAreaDialog?.isActive ? 'Desactivar' : 'Activar'}
+        variant={toggleAreaDialog?.isActive ? 'destructive' : 'default'}
+        loading={activateArea.isPending || deactivateArea.isPending}
+      />
     </div>
   )
 }
