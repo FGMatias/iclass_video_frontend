@@ -21,7 +21,7 @@ export function createUploadVideoSchema(constraints: VideoUploadConstraints) {
       .min(1, 'El nombre es obligatorio')
       .max(100, 'El nombre no debe exceder 100 caracteres'),
     file: z
-      .instanceof(File, { message: 'El video es obligatorio' })
+      .custom<File>((val) => val instanceof File, 'El video es obligatorio')
       .refine(
         (file) => file.size <= maxSizeBytes,
         `El archivo no debe exceder ${constraints.maxSizeMb}MB`,
@@ -31,14 +31,13 @@ export function createUploadVideoSchema(constraints: VideoUploadConstraints) {
         `Formato no permitido. Use ${extensionLabel}`,
       ),
     thumbnail: z
-      .instanceof(File)
+      .custom<File>((val) => val instanceof File, 'Debe ser un archivo de imagen')
       .refine((file) => file.size <= 5 * 1024 * 1024, 'La imagen no debe exceder 5MB')
       .refine(
         (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
         'Formato no permitido. Use JPG, PNG o WebP',
       )
-      .nullish()
-      .transform((val) => val ?? undefined),
+      .optional(),
   })
 }
 
