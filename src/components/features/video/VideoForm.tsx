@@ -90,7 +90,9 @@ export function VideoForm({
         <div className="no-scrollbar flex-1 overflow-y-auto px-4 sm:px-6">
           <form id="video-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre</Label>
+              <Label htmlFor="name">
+                Nombre <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="name"
                 placeholder="Ej. Introducción a iClass"
@@ -124,7 +126,11 @@ export function VideoForm({
                   name="file"
                   render={({ field: { onChange, value } }) => (
                     <FileDropzone
-                      label="Archivo de Video *"
+                      label={
+                        <>
+                          Archivo de Video <span className="text-red-500">*</span>
+                        </>
+                      }
                       description={`Extensiones soportadas: ${allowedVideoExts} (Max: ${constraints?.maxSizeMb || 50}MB)`}
                       accept={constraints?.allowedExtensions.join(',') || '.mp4,.mov,.mkv'}
                       icon="video"

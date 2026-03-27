@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { Image as ImageIcon, UploadCloud, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 
 interface FileDropzoneProps {
-  label: string
+  label: ReactNode
   description: string
   accept: string
   icon?: 'image' | 'video'
@@ -59,8 +59,10 @@ export function FileDropzone({
   }
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm leading-none font-medium">{label}</label>
+    <div className="flex flex-col space-y-3">
+      <label className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        {label}
+      </label>
 
       {value ? (
         <div className="bg-muted/50 relative flex items-center justify-between rounded-lg border p-4">
@@ -123,7 +125,7 @@ export function FileDropzone({
         </div>
       )}
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm font-medium">{error}</p>}
     </div>
   )
 }

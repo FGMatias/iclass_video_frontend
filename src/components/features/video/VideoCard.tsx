@@ -24,7 +24,7 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onEdit, onToggleStatus, onDelete, onPlay }: VideoCardProps) {
   return (
-    <Card className="group flex flex-col overflow-hidden transition-all hover:shadow-md">
+    <Card className="group flex flex-col gap-0 overflow-hidden p-0 transition-all hover:shadow-md">
       <div className="bg-muted relative aspect-video w-full overflow-hidden">
         <div className="absolute top-2 right-2 z-10">
           <DropdownMenu>

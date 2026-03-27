@@ -39,11 +39,11 @@ export const videoService = {
   },
 
   activate: async (id: number): Promise<void> => {
-    await api.put(`/video/${id}`)
+    await api.put(`/video/${id}/activate`)
   },
 
   deactivate: async (id: number): Promise<void> => {
-    await api.put(`/video/${id}`)
+    await api.put(`/video/${id}/deactivate`)
   },
 
   uploadConstraints: async (): Promise<VideoUploadConstraints> => {

@@ -12,66 +12,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ROUTES } from '@/constants/routes'
 import { useCurrentUser } from '@/hooks/queries/useUser'
-import { useUpdateVideo, useUploadVideo, useVideoUploadConstraints } from '@/hooks/queries/useVideo'
-import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
+import {
+  useActivateVideo,
+  useDeactivateVideo,
+  useDeleteVideo,
+  useUpdateVideo,
+  useUploadVideo,
+  useVideos,
+  useVideoUploadConstraints,
+} from '@/hooks/queries/useVideo'
 import type { VideoResponse } from '@/types/video.types'
 import { Search, Upload, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-
-// --- Mock Data ---
-const MOCK_VIDEOS: VideoResponse[] = [
-  {
-    id: 1,
-    companyId: 1,
-    companyName: 'Empresa Demo',
-    name: 'Introducción a la Plataforma',
-    fileExtension: 'mp4',
-    duration: 320,
-    fileSize: 15400000,
-    checksum: 'abc123hash',
-    urlVideo: null,
-    isActive: true,
-    createdAt: '2023-10-12T10:00:00Z',
-    updatedAt: '2023-10-12T10:00:00Z',
-    thumbnail: 'https://picsum.photos/seed/vid1/400/225',
-  },
-  {
-    id: 2,
-    companyId: 1,
-    companyName: 'Empresa Demo',
-    name: 'Tutorial de Seguridad Básica',
-    fileExtension: 'mov',
-    duration: 765,
-    fileSize: 25400000,
-    checksum: 'def456hash',
-    urlVideo: null,
-    isActive: true,
-    createdAt: '2023-10-08T14:30:00Z',
-    updatedAt: '2023-10-08T14:30:00Z',
-    thumbnail: 'https://picsum.photos/seed/vid2/400/225',
-  },
-  {
-    id: 3,
-    companyId: 1,
-    companyName: 'Empresa Demo',
-    name: 'Campaña Marketing Q3 2024',
-    fileExtension: 'mp4',
-    duration: 90,
-    fileSize: 8400000,
-    checksum: 'ghi789hash',
-    urlVideo: null,
-    isActive: true,
-    createdAt: '2023-10-01T09:15:00Z',
-    updatedAt: '2023-10-01T09:15:00Z',
-    thumbnail: 'https://picsum.photos/seed/vid3/400/225',
-  },
-]
+import { useState } from 'react'
 
 export function VideoPage() {
-  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
   const { data: currentUserProfile } = useCurrentUser()
+  const currentUserCompanyId = currentUserProfile?.assignment?.companyId
+  const { data: videos = [], isLoading } = useVideos(currentUserCompanyId)
   const { data: constraints } = useVideoUploadConstraints()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -80,16 +38,13 @@ export function VideoPage() {
   const [selectedVideo, setSelectedVideo] = useState<VideoResponse | null>(null)
   const [toggleDialog, setToggleDialog] = useState<VideoResponse | null>(null)
   const [deleteDialog, setDeleteDialog] = useState<VideoResponse | null>(null)
-  const currentUserCompanyId = currentUserProfile?.assignment?.companyId
   const uploadVideo = useUploadVideo()
   const updateVideo = useUpdateVideo()
+  const deleteVideo = useDeleteVideo()
+  const activateVideo = useActivateVideo()
+  const deactivateVideo = useDeactivateVideo()
 
-  useEffect(() => {
-    setCustomBreadcrumbs([{ label: 'Videos', path: ROUTES.COMPANY_ADMINISTRATOR.VIDEO }])
-    return () => setCustomBreadcrumbs(null)
-  }, [setCustomBreadcrumbs])
-
-  const filteredVideos = MOCK_VIDEOS.filter((video) => {
+  const filteredVideos = videos.filter((video) => {
     const matchesSearch = video.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus =
       statusFilter === 'all' ? true : statusFilter === 'active' ? video.isActive : !video.isActive
@@ -108,7 +63,6 @@ export function VideoPage() {
     setExtensionFilter('all')
   }
 
-  // Handlers de la Card
   const handleEdit = (video: VideoResponse) => {
     setSelectedVideo(video)
     setFormOpen(true)
@@ -116,19 +70,22 @@ export function VideoPage() {
 
   const handleConfirmToggle = () => {
     if (!toggleDialog) return
-    console.log(toggleDialog.isActive ? 'Desactivando...' : 'Activando...', toggleDialog.id)
-    setToggleDialog(null)
+
+    if (toggleDialog.isActive) {
+      deactivateVideo.mutate({ id: toggleDialog.id }, { onSuccess: () => setToggleDialog(null) })
+    } else {
+      activateVideo.mutate({ id: toggleDialog.id }, { onSuccess: () => setToggleDialog(null) })
+    }
   }
 
   const handleConfirmDelete = () => {
     if (!deleteDialog) return
-    console.log('Eliminando...', deleteDialog.id)
-    setDeleteDialog(null)
+
+    deleteVideo.mutate({ id: deleteDialog.id }, { onSuccess: () => setDeleteDialog(null) })
   }
 
   return (
     <div className="space-y-6">
-      {/* CABECERA ESTANDARIZADA */}
       <PageHeader
         title="Biblioteca de Videos"
         description="Gestiona y visualiza el catálogo de contenidos"
@@ -145,7 +102,6 @@ export function VideoPage() {
         }
       />
 
-      {/* BARRA DE FILTROS ESTILO SHADCN DATATABLE */}
       <div className="space-y-4">
         <div className="flex items-center gap-4">
           <div className="relative max-w-sm flex-1">
