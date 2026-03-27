@@ -1,21 +1,17 @@
+import { formatDuration } from '@/lib/utils'
+import type { VideoSimple } from '@/types/video.types'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Clock, GripVertical, PlayCircle, X } from 'lucide-react'
 
-interface PlaylistItem {
-  id: string
-  title: string
-  duration: string
-  type: string
-}
-
 interface SortablePlaylistItemProps {
-  id: string
-  item: PlaylistItem
+  id: number
+  item: VideoSimple
   index: number
+  onRemove: (videoId: number) => void
 }
 
-export function SortablePlaylistItem({ id, item, index }: SortablePlaylistItemProps) {
+export function SortablePlaylistItem({ id, item, index, onRemove }: SortablePlaylistItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
   })
@@ -35,7 +31,6 @@ export function SortablePlaylistItem({ id, item, index }: SortablePlaylistItemPr
         isDragging ? 'border-primary/50 shadow-md' : 'hover:border-primary/50 hover:shadow-md'
       }`}
     >
-      {/* Handle (Zona para arrastrar) */}
       <div
         {...attributes}
         {...listeners}
@@ -49,21 +44,25 @@ export function SortablePlaylistItem({ id, item, index }: SortablePlaylistItemPr
       </div>
 
       <div className="bg-muted border-border flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded border">
-        <PlayCircle className="text-muted-foreground/70 h-4 w-4" />
+        {item.thumbnail ? (
+          <img src={item.thumbnail} alt={item.name} className="h-full w-full object-cover" />
+        ) : (
+          <PlayCircle className="text-muted-foreground/70 h-4 w-4" />
+        )}
       </div>
 
       <div className="flex flex-1 flex-col justify-center gap-0.5 overflow-hidden">
-        <span className="truncate text-sm leading-none font-medium">{item.title}</span>
-        <span className="text-muted-foreground text-xs">{item.duration}</span>
+        <span className="truncate text-sm leading-none font-medium">{item.name}</span>
+        <span className="text-muted-foreground text-xs">{formatDuration(item.duration)}</span>
       </div>
 
       <div className="flex items-center gap-2">
         <div className="text-muted-foreground bg-secondary/50 flex items-center rounded px-2 py-1 text-xs">
-          <Clock className="mr-1 h-3 w-3" /> {item.duration}
+          <Clock className="mr-1 h-3 w-3" /> {formatDuration(item.duration)}
         </div>
         <button
           className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive focus-visible:ring-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:ring-1 focus-visible:outline-none"
-          onClick={() => console.log('Eliminar item', item.id)} // TODO: Lógica para eliminar
+          onClick={() => onRemove(item.id)}
         >
           <span className="sr-only">Remover</span>
           <X className="h-4 w-4" />

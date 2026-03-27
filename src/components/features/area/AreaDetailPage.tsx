@@ -9,10 +9,14 @@ import {
   useDetailArea,
   useUpdateArea,
 } from '@/hooks/queries/useArea'
+import { useSyncPlaylist } from '@/hooks/queries/useAreaVideo'
+import { useVideos } from '@/hooks/queries/useVideo'
 import { buildRoute } from '@/lib/route-builder'
+import { formatDuration } from '@/lib/utils'
 import type { UpdateAreaFormData } from '@/schemas/area.schema'
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
 import type { AreaDetail } from '@/types/area.types'
+import type { VideoSimple } from '@/types/video.types'
 import {
   closestCenter,
   DndContext,
@@ -44,14 +48,8 @@ import {
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AreaForm } from './AreaForm'
+import { PlaylistForm } from './PlaylistForm'
 import { SortablePlaylistItem } from './SortablePlaylistItem'
-
-// MOCK DATA: Elimina esto cuando conectes con la API real
-const MOCK_PLAYLIST = [
-  { id: '1', title: 'Promo Verano 2023', duration: '01:30', type: 'video' },
-  { id: '2', title: 'Bienvenida Clientes', duration: '03:45', type: 'image' },
-  { id: '3', title: 'Seguridad Corporativa', duration: '02:15', type: 'film' },
-]
 
 export function AreaDetailPage() {
   const navigate = useNavigate()
@@ -61,24 +59,22 @@ export function AreaDetailPage() {
   }>()
   const areaId = paramAreaId ? parseInt(paramAreaId, 10) : undefined
   const branchId = paramBranchId ? parseInt(paramBranchId, 10) : undefined
-
-  // -- Queries y Mutations --
   const { data: area, isLoading, isError } = useDetailArea(areaId)
+  const { data: companyVideos = [] } = useVideos(area?.companyId)
+  const syncPlaylist = useSyncPlaylist(areaId!)
   const updateArea = useUpdateArea()
   const activateArea = useActivateArea()
   const deactivateArea = useDeactivateArea()
-
-  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
-
-  // -- States --
+  const serverPlaylist = area?.playlist ?? []
+  const [playlistOverride, setPlaylistOverride] = useState<VideoSimple[] | null>(null)
   const [areaFormOpen, setAreaFormOpen] = useState(false)
   const [toggleDialog, setToggleDialog] = useState<AreaDetail | null>(null)
+  const [playlistFormOpen, setPlaylistFormOpen] = useState(false)
+  const [activeId, setActiveId] = useState<number | null>(null)
+  const localPlaylist = playlistOverride ?? serverPlaylist
+  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
+  const currentPlaylistIds = localPlaylist.map((v) => v.id)
 
-  // Estado para el Drag & Drop de la Playlist
-  const [playlist, setPlaylist] = useState(MOCK_PLAYLIST)
-  const [activeId, setActiveId] = useState<string | null>(null)
-
-  // -- Breadcrumbs Effect --
   useEffect(() => {
     if (area?.name) {
       setCustomBreadcrumbs([
@@ -95,7 +91,6 @@ export function AreaDetailPage() {
     return () => setCustomBreadcrumbs(null)
   }, [area?.name, setCustomBreadcrumbs])
 
-  // -- Handlers (Area) --
   const handleEditArea = () => setAreaFormOpen(true)
 
   const handleAreaFormSubmit = (data: UpdateAreaFormData) => {
@@ -114,7 +109,26 @@ export function AreaDetailPage() {
     }
   }
 
-  // -- DND-KIT Handlers --
+  const handleSyncPlaylist = (selectedIds: number[]) => {
+    syncPlaylist.mutate(selectedIds, {
+      onSuccess: () => {
+        setPlaylistOverride(null)
+        setPlaylistFormOpen(false)
+      },
+    })
+  }
+
+  const handleRemoveFromPlaylist = (videoId: number) => {
+    const updated = localPlaylist.filter((v) => v.id !== videoId)
+    setPlaylistOverride(updated)
+    syncPlaylist.mutate(
+      updated.map((v) => v.id),
+      {
+        onSuccess: () => setPlaylistOverride(null),
+      },
+    )
+  }
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -131,14 +145,21 @@ export function AreaDetailPage() {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      setPlaylist((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id)
-        const newIndex = items.findIndex((item) => item.id === over.id)
-        // TODO: Aquí llamarías a una mutación para guardar el nuevo orden en el backend
-        return arrayMove(items, oldIndex, newIndex)
-      })
+      const oldIndex = localPlaylist.findIndex((item) => item.id === active.id)
+      const newIndex = localPlaylist.findIndex((item) => item.id === over.id)
+      const reordered = arrayMove(localPlaylist, oldIndex, newIndex)
+
+      setPlaylistOverride(reordered)
+      syncPlaylist.mutate(
+        reordered.map((v) => v.id),
+        {
+          onSuccess: () => setPlaylistOverride(null),
+        },
+      )
     }
   }
+
+  const totalDuration = localPlaylist.reduce((sum, v) => sum + (v.duration ?? 0), 0)
 
   if (isLoading) {
     return (
@@ -159,7 +180,6 @@ export function AreaDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -174,9 +194,7 @@ export function AreaDetailPage() {
         </div>
       </div>
 
-      {/* FILA 1: GRID (Info | Playlist) */}
       <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
-        {/* COLUMNA IZQUIERDA: INFO ÁREA */}
         <Card className="flex flex-col shadow-sm lg:col-span-1">
           <CardContent className="flex h-full flex-col space-y-6 p-6">
             <div className="flex items-center gap-4">
@@ -230,7 +248,6 @@ export function AreaDetailPage() {
           </CardContent>
         </Card>
 
-        {/* COLUMNA DERECHA: PLAYLIST (Drag & Drop) */}
         <Card className="flex flex-col shadow-sm lg:col-span-2">
           <CardHeader className="border-border/40 flex flex-row items-center justify-between border-b pb-4">
             <div className="space-y-1">
@@ -239,50 +256,60 @@ export function AreaDetailPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-3 p-6">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={playlist.map((p) => p.id)}
-                strategy={verticalListSortingStrategy}
+            {localPlaylist.length > 0 ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
               >
-                <div className="flex-1 space-y-3">
-                  {playlist.map((item, index) => (
-                    <SortablePlaylistItem
-                      key={item.id}
-                      id={item.id}
-                      item={item}
-                      index={index + 1}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-
-              {/* Ghost overlay during drag */}
-              <DragOverlay>
-                {activeId ? (
-                  <div className="border-primary bg-card flex cursor-grabbing items-center gap-3 rounded-lg border p-3 opacity-80 shadow-lg">
-                    {/* Replica minimalista del item arrastrado */}
-                    <GripVertical className="text-muted-foreground h-5 w-5" />
-                    <div className="flex-1">
-                      <span className="text-sm font-medium">Moviendo item...</span>
-                    </div>
+                <SortableContext
+                  items={localPlaylist.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex-1 space-y-3">
+                    {localPlaylist.map((item, index) => (
+                      <SortablePlaylistItem
+                        key={item.id}
+                        id={item.id}
+                        item={item}
+                        index={index + 1}
+                        onRemove={handleRemoveFromPlaylist}
+                      />
+                    ))}
                   </div>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
+                </SortableContext>
 
-            {/* Footer de Playlist */}
+                <DragOverlay>
+                  {activeId ? (
+                    <div className="border-primary bg-card flex cursor-grabbing items-center gap-3 rounded-lg border p-3 opacity-80 shadow-lg">
+                      <GripVertical className="text-muted-foreground h-5 w-5" />
+                      <div className="flex-1">
+                        <span className="text-sm font-medium">
+                          {localPlaylist.find((p) => p.id === activeId)?.name ?? 'Moviendo...'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
+            ) : (
+              <div className="text-muted-foreground flex flex-1 items-center justify-center rounded-lg border border-dashed py-12 text-center text-sm">
+                No hay videos en la playlist.
+              </div>
+            )}
+
             <div className="bg-muted/20 border-border/50 mt-4 flex flex-col items-center justify-between gap-4 rounded-lg border p-4 sm:flex-row">
               <div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
                 <Timer className="h-4 w-4" />
-                Duración Total: <span className="text-foreground font-bold">07:45</span>{' '}
-                {/* TODO: Calcular real */}
+                Duración Total:{' '}
+                <span className="text-foreground font-bold">{formatDuration(totalDuration)}</span>
               </div>
-              <Button size="sm" className="h-9 w-full sm:w-auto">
+              <Button
+                size="sm"
+                className="h-9 w-full sm:w-auto"
+                onClick={() => setPlaylistFormOpen(true)}
+              >
                 <Plus className="mr-2 h-4 w-4" /> Agregar Video
               </Button>
             </div>
@@ -290,7 +317,6 @@ export function AreaDetailPage() {
         </Card>
       </div>
 
-      {/* FILA 2: DISPOSITIVOS */}
       <Card className="shadow-sm">
         <CardHeader className="border-border/40 flex flex-row items-center justify-between border-b pb-4">
           <div className="space-y-1">
@@ -303,20 +329,28 @@ export function AreaDetailPage() {
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Aquí iría tu DeviceTable. Por ahora ponemos un placeholder bonito */}
           <div className="text-muted-foreground bg-muted/10 p-8 text-center text-sm">
             Tabla de dispositivos (En construcción...)
           </div>
         </CardContent>
       </Card>
 
-      {/* DIÁLOGOS Y FORMULARIOS */}
       <AreaForm
         open={areaFormOpen}
         onOpenChange={setAreaFormOpen}
         area={area}
         onSubmit={handleAreaFormSubmit}
         isLoading={updateArea.isPending}
+      />
+
+      <PlaylistForm
+        key={playlistFormOpen ? 'open' : 'closed'}
+        open={playlistFormOpen}
+        onOpenChange={setPlaylistFormOpen}
+        availableVideos={companyVideos.filter((v) => v.isActive)}
+        currentPlaylistIds={currentPlaylistIds}
+        onConfirm={handleSyncPlaylist}
+        isLoading={syncPlaylist.isPending}
       />
     </div>
   )
