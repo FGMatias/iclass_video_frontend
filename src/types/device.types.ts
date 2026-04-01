@@ -4,15 +4,15 @@ export interface DeviceResponse {
   deviceIdentifier: string
   deviceUsername: string
   deviceType: string
+  companyId: number
+  companyName: string
+  branchId: number
+  branchName: string
   currentAreaId: number
   currentAreaName: string
-  currentBranchId: number
-  currentBranchName: string
-  currentCompanyId: number
-  currentCompanyName: string
   configuredByUsername: string
   isActive: boolean
-  assignedAt: string
+  assignedAt: string | null
   lastLogin: string | null
   lastSync: string | null
   createdAt: string
@@ -31,7 +31,7 @@ export interface DeviceInfo {
 export interface CreateDeviceRequest {
   deviceName: string
   deviceTypeId: number
-  areaId: number
+  areaId?: number
   deviceUsername: string
   notes?: string
 }
