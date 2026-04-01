@@ -37,6 +37,7 @@ export interface VideoSimple {
   duration: number | null
   orden?: number
   fileSize?: number
+  fileExtension: string
   checksum?: string
 }
 

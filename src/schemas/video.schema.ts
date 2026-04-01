@@ -8,7 +8,7 @@ function getFileExtension(fileName: string): string {
   return lastDot >= 0 ? fileName.substring(lastDot).toLowerCase() : ''
 }
 
-export function createUploadVideoSchema(constraints: VideoUploadConstraints) {
+export function uploadVideoSchema(constraints: VideoUploadConstraints) {
   const maxSizeBytes = constraints.maxSizeMb * 1024 * 1024
 
   const extensionLabel = constraints.allowedExtensions
@@ -41,7 +41,7 @@ export function createUploadVideoSchema(constraints: VideoUploadConstraints) {
   })
 }
 
-export type UploadVideoFormData = z.infer<ReturnType<typeof createUploadVideoSchema>>
+export type UploadVideoFormData = z.infer<ReturnType<typeof uploadVideoSchema>>
 
 export const updateVideoSchema = z.object({
   name: z

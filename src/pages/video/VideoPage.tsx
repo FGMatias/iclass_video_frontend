@@ -22,6 +22,7 @@ import {
   useVideos,
   useVideoUploadConstraints,
 } from '@/hooks/queries/useVideo'
+import type { UpdateVideoFormData, UploadVideoFormData } from '@/schemas/video.schema'
 import type { VideoResponse } from '@/types/video.types'
 import { Search, Upload, X } from 'lucide-react'
 import { useState } from 'react'
@@ -66,6 +67,19 @@ export function VideoPage() {
   const handleEdit = (video: VideoResponse) => {
     setSelectedVideo(video)
     setFormOpen(true)
+  }
+
+  const handleFormSubmit = (data: UploadVideoFormData | UpdateVideoFormData) => {
+    if (selectedVideo) {
+      updateVideo.mutate(
+        { id: selectedVideo.id, data: { name: data.name } },
+        { onSuccess: () => setFormOpen(false) },
+      )
+      return
+    }
+
+    const formData = toUploadVideo(data as UploadVideoFormData, currentUserCompanyId!)
+    uploadVideo.mutate(formData, { onSuccess: () => setFormOpen(false) })
   }
 
   const handleConfirmToggle = () => {
@@ -175,17 +189,7 @@ export function VideoPage() {
         video={selectedVideo}
         constraints={constraints}
         isLoading={uploadVideo.isPending || updateVideo.isPending}
-        onSubmit={(data) => {
-          if (selectedVideo) {
-            updateVideo.mutate(
-              { id: selectedVideo.id, data: { name: data.name } },
-              { onSuccess: () => setFormOpen(false) },
-            )
-          } else {
-            const formData = toUploadVideo(data, currentUserCompanyId!)
-            uploadVideo.mutate(formData, { onSuccess: () => setFormOpen(false) })
-          }
-        }}
+        onSubmit={handleFormSubmit}
       />
 
       <ConfirmDialog

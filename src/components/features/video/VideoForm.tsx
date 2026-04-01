@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createUploadVideoSchema, type UploadVideoFormData } from '@/schemas/video.schema'
+import { uploadVideoSchema, type UploadVideoFormData } from '@/schemas/video.schema'
 import type { VideoResponse, VideoUploadConstraints } from '@/types/video.types'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
@@ -39,9 +39,9 @@ export function VideoForm({
 
   const schema = useMemo(() => {
     if (!constraints) {
-      return createUploadVideoSchema({ maxSizeMb: 50, allowedExtensions: ['.mp4'] })
+      return uploadVideoSchema({ maxSizeMb: 50, allowedExtensions: ['.mp4'] })
     }
-    return createUploadVideoSchema(constraints)
+    return uploadVideoSchema(constraints)
   }, [constraints])
 
   const {
