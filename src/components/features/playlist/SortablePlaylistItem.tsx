@@ -53,7 +53,7 @@ export function SortablePlaylistItem({ id, item, index, onRemove }: SortablePlay
 
       <div className="flex flex-1 flex-col justify-center gap-0.5 overflow-hidden">
         <span className="truncate text-sm leading-none font-medium">{item.name}</span>
-        <span className="text-muted-foreground text-xs">{formatDuration(item.duration)}</span>
+        <span className="text-muted-foreground text-xs">{item.fileExtension}</span>
       </div>
 
       <div className="flex items-center gap-2">
