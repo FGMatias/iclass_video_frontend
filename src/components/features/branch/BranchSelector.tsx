@@ -30,10 +30,10 @@ export function BranchSelector({
   disabled,
   companyId,
 }: BranchSelectorProps) {
-  const { data: companies = [] } = useBranches(companyId)
+  const { data: branches = [] } = useBranches(companyId)
   const [open, setOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const selected = companies.find((c) => c.id === value)
+  const selected = branches.find((b) => b.id === value)
 
   const handleSelected = (id: number) => {
     onChange(id)
@@ -68,14 +68,14 @@ export function BranchSelector({
             <CommandList>
               <CommandEmpty>No se encontraron sucursales.</CommandEmpty>
               <CommandGroup>
-                {companies
-                  .filter((c) => c.isActive)
-                  .map((c) => (
-                    <CommandItem key={c.id} value={c.name} onSelect={() => handleSelected(c.id)}>
+                {branches
+                  .filter((b) => b.isActive)
+                  .map((b) => (
+                    <CommandItem key={b.id} value={b.name} onSelect={() => handleSelected(b.id)}>
                       <Check
-                        className={cn('mr-2 size-4', value === c.id ? 'opacity-100' : 'opacity-0')}
+                        className={cn('mr-2 size-4', value === b.id ? 'opacity-100' : 'opacity-0')}
                       />
-                      {c.name}
+                      {b.name}
                     </CommandItem>
                   ))}
               </CommandGroup>

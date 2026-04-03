@@ -77,7 +77,7 @@ export function BranchModal({ open, onOpenChange, onSuccess, companyId }: Branch
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="name">
-                Nombre <span className="text-destructive">*</span>
+                Nombre <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="name"
