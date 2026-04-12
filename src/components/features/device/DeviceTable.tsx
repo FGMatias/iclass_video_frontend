@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { DeviceResponse } from '@/types/device.types'
+import type { DeviceInfo } from '@/types/device.types'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -14,10 +14,10 @@ import { ArrowUpDown, Monitor, MoreHorizontal, Smartphone } from 'lucide-react'
 import React, { useMemo } from 'react'
 
 interface DeviceTableProps {
-  data: DeviceResponse[]
+  data: DeviceInfo[]
   isLoading: boolean
   showAreaColumn?: boolean
-  renderActions?: (device: DeviceResponse) => React.ReactNode
+  renderActions?: (device: DeviceInfo) => React.ReactNode
   filterSlot?: React.ReactNode
 }
 
@@ -29,20 +29,16 @@ function getDeviceIcon(type: string) {
   )
 }
 
-function getLastConnection(device: DeviceResponse): string {
-  const lastLogin = device.lastLogin ? new Date(device.lastLogin) : null
-  const lastSync = device.lastSync ? new Date(device.lastSync) : null
+function getLastConnection(device: DeviceInfo): string {
+  if (!device.lastLogin) return '-'
 
-  let latest: Date | null = null
-  if (lastLogin && lastSync) {
-    latest = lastLogin > lastSync ? lastLogin : lastSync
-  } else {
-    latest = lastLogin ?? lastSync
-  }
+  return formatDistanceToNow(new Date(device.lastLogin), { addSuffix: false, locale: es })
+}
 
-  if (!latest) return '-'
+function getLastSync(device: DeviceInfo): string {
+  if (!device.lastSync) return '-'
 
-  return formatDistanceToNow(latest, { addSuffix: false, locale: es })
+  return formatDistanceToNow(new Date(device.lastSync), { addSuffix: false, locale: es })
 }
 
 export function DeviceTable({
@@ -52,8 +48,8 @@ export function DeviceTable({
   renderActions,
   filterSlot,
 }: DeviceTableProps) {
-  const columns = useMemo<ColumnDef<DeviceResponse>[]>(() => {
-    const cols: ColumnDef<DeviceResponse>[] = [
+  const columns = useMemo<ColumnDef<DeviceInfo>[]>(() => {
+    const cols: ColumnDef<DeviceInfo>[] = [
       {
         accessorKey: 'deviceName',
         header: ({ column }) => (
@@ -116,7 +112,21 @@ export function DeviceTable({
 
         return (
           <span className="text-muted-foreground text-sm">
-            {label === '-' ? label : `Have ${label}`}
+            {label === '-' ? label : `Hace ${label}`}
+          </span>
+        )
+      },
+    })
+
+    cols.push({
+      id: 'lastSync',
+      header: 'Última sincronización',
+      cell: ({ row }) => {
+        const label = getLastSync(row.original)
+
+        return (
+          <span className="text-muted-foreground text-sm">
+            {label === '-' ? label : `Hace ${label}`}
           </span>
         )
       },
