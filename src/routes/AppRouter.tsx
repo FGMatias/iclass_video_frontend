@@ -4,9 +4,11 @@ import { CompanyDetailPage } from '@/components/features/company/CompanyDetailPa
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ROLES } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
+import { AreaPage } from '@/pages/area/AreaPage'
 import { BranchPage } from '@/pages/branch/BranchPage'
 import { CompanyPage } from '@/pages/company/CompanyPage'
 import { SystemConfigPage } from '@/pages/configuration/SystemConfigPage'
+import { DevicePage } from '@/pages/device/DevicePage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { UserPage } from '@/pages/user/UserPage'
 import { VideoPage } from '@/pages/video/VideoPage'
@@ -90,17 +92,22 @@ const router = createBrowserRouter([
             children: [
               {
                 path: ROUTES.BRANCH_ADMINISTRATOR.VIDEO,
-                element: <Placeholder titulo="Video" />,
+                element: <VideoPage />,
                 handle: { group: 'GESTIÓN', title: 'Videos' },
               },
               {
                 path: ROUTES.BRANCH_ADMINISTRATOR.AREA,
-                element: <Placeholder titulo="Áreas" />,
+                element: <AreaPage />,
                 handle: { group: 'GESTIÓN', title: 'Áreas' },
               },
               {
+                path: ROUTES.BRANCH_ADMINISTRATOR.AREA_DETAIL,
+                element: <AreaDetailPage />,
+                handle: { group: 'GESTIÓN', title: 'Detalle de Área' },
+              },
+              {
                 path: ROUTES.BRANCH_ADMINISTRATOR.DEVICE,
-                element: <Placeholder titulo="Dispositivos" />,
+                element: <DevicePage />,
                 handle: { group: 'GESTIÓN', title: 'Dispositivos' },
               },
               {

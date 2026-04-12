@@ -1,3 +1,4 @@
-export { SortablePlaylistItem } from '../playlist/SortablePlaylistItem'
 export { AreaForm } from './AreaForm'
+export { AreaModal } from './AreaModal'
+export { AreaSelector } from './AreaSelector'
 export { AreaTable } from './AreaTable'

@@ -1,10 +1,14 @@
 import { toCreateArea, toUpdateArea } from '@/adapters/area.adapter'
 import { toUpdateBranch } from '@/adapters/branch.adapter'
+import { toCreateDevice, toUpdateDevice } from '@/adapters/device.adapter'
 import { toCreateBranchAdmin, toUpdateUser } from '@/adapters/user.adapter'
+import { AreaForm, AreaTable } from '@/components/features/area'
+import { DeviceForm, DeviceTable } from '@/components/features/device'
+import { UserForm, UserTable } from '@/components/features/user'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import { ROUTES } from '@/constants/routes'
@@ -16,6 +20,12 @@ import {
 } from '@/hooks/queries/useArea'
 import { useDetailBranch, useUpdateBranch } from '@/hooks/queries/useBranch'
 import {
+  useActivateDevice,
+  useCreateDevice,
+  useDeactivateDevice,
+  useUpdateDevice,
+} from '@/hooks/queries/useDevice'
+import {
   useActivateUser,
   useCreateBranchAdmin,
   useDeactivateUser,
@@ -26,6 +36,12 @@ import { buildRoute } from '@/lib/route-builder'
 import type { CreateAreaFormData, UpdateAreaFormData } from '@/schemas/area.schema'
 import type { UpdateBranchFormData } from '@/schemas/branch.schema'
 import {
+  createDeviceSchema,
+  updateDeviceSchema,
+  type CreateDeviceFormData,
+  type UpdateDeviceFormData,
+} from '@/schemas/device.schema'
+import {
   createBranchAdminSchema,
   updateUserSchema,
   type CreateBranchAdminFormData,
@@ -34,6 +50,7 @@ import {
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
 import type { AreaResponse } from '@/types/area.types'
 import type { BranchResponse } from '@/types/branch.types'
+import type { DeviceInfo } from '@/types/device.types'
 import type { UserResponse } from '@/types/user.types'
 import {
   ArrowLeft,
@@ -50,8 +67,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AreaForm, AreaTable } from '../area'
-import { UserForm, UserTable } from '../user'
 import { BranchForm } from './BranchForm'
 
 export function BranchDetailPage() {
@@ -68,6 +83,9 @@ export function BranchDetailPage() {
   const [areaFormOpen, setAreaFormOpen] = useState(false)
   const [selectedArea, setSelectedArea] = useState<AreaResponse | null>(null)
   const [toggleAreaDialog, setToggleAreaDialog] = useState<AreaResponse | null>(null)
+  const [deviceFormOpen, setDeviceFormOpen] = useState(false)
+  const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null)
+  const [toggleDeviceDialog, setToggleDeviceDialog] = useState<DeviceInfo | null>(null)
   const updateBranch = useUpdateBranch()
   const createUser = useCreateBranchAdmin(branchId)
   const updateUser = useUpdateUser({ branchId })
@@ -76,8 +94,12 @@ export function BranchDetailPage() {
   const deactivateUser = useDeactivateUser({ branchId })
   const createArea = useCreateArea(branchId)
   const updateArea = useUpdateArea(branchId)
-  const activateArea = useActivateArea()
-  const deactivateArea = useDeactivateArea()
+  const activateArea = useActivateArea(branchId)
+  const deactivateArea = useDeactivateArea(branchId)
+  const createDevice = useCreateDevice({ branchId })
+  const updateDevice = useUpdateDevice({ branchId })
+  const activateDevice = useActivateDevice({ branchId })
+  const deactivateDevice = useDeactivateDevice({ branchId })
   const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
 
   useEffect(() => {
@@ -103,6 +125,11 @@ export function BranchDetailPage() {
   const handleEditArea = (area: AreaResponse) => {
     setSelectedArea(area)
     setAreaFormOpen(true)
+  }
+
+  const handleEditDevice = (device: DeviceInfo) => {
+    setSelectedDeviceId(device.id)
+    setDeviceFormOpen(true)
   }
 
   const handleBranchFormSubmit = (data: UpdateBranchFormData) => {
@@ -170,6 +197,34 @@ export function BranchDetailPage() {
       activateArea.mutate(
         { id: toggleAreaDialog.id },
         { onSuccess: () => setToggleAreaDialog(null) },
+      )
+    }
+  }
+
+  const handleDeviceFormSubmit = (data: CreateDeviceFormData | UpdateDeviceFormData) => {
+    if (selectedDeviceId) {
+      const payload = toUpdateDevice(data as UpdateDeviceFormData)
+      updateDevice.mutate(
+        { id: selectedDeviceId, data: payload },
+        { onSuccess: () => setDeviceFormOpen(false) },
+      )
+      return
+    }
+    const payload = toCreateDevice(data as CreateDeviceFormData)
+    createDevice.mutate({ data: payload }, { onSuccess: () => setDeviceFormOpen(false) })
+  }
+
+  const handleConfirmToggleDevice = () => {
+    if (!toggleDeviceDialog) return
+    if (toggleDeviceDialog.isActive) {
+      deactivateDevice.mutate(
+        { id: toggleDeviceDialog.id },
+        { onSuccess: () => setToggleDeviceDialog(null) },
+      )
+    } else {
+      activateDevice.mutate(
+        { id: toggleDeviceDialog.id },
+        { onSuccess: () => setToggleDeviceDialog(null) },
       )
     }
   }
@@ -365,6 +420,52 @@ export function BranchDetailPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-lg">Dispositivos Conectados</CardTitle>
+            <CardDescription>Gestión de dispositivos registrados en el área.</CardDescription>
+          </div>
+          <Button
+            onClick={() => {
+              setSelectedDeviceId(null)
+              setDeviceFormOpen(true)
+            }}
+          >
+            <Plus className="mr-2 size-4" />
+            Nuevo Dispositivo
+          </Button>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <DeviceTable
+            data={branch.devices || []}
+            isLoading={false}
+            showAreaColumn={true}
+            renderActions={(device) => (
+              <>
+                <DropdownMenuItem onClick={() => handleEditDevice(device)}>
+                  <Pencil className="mr-2 size-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setToggleDeviceDialog(device)}>
+                  {device.isActive ? (
+                    <>
+                      <ShieldOff className="text-destructive mr-2 size-4" />
+                      <span className="text-destructive">Desactivar</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="mr-2 size-4" /> Activar
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </>
+            )}
+          />
+        </CardContent>
+      </Card>
+
       <BranchForm
         open={branchFormOpen}
         onOpenChange={setBranchFormOpen}
@@ -392,6 +493,17 @@ export function BranchDetailPage() {
         area={selectedArea}
         onSubmit={handleAreaFormSubmit}
         isLoading={createArea.isPending || updateArea.isPending}
+      />
+
+      <DeviceForm
+        open={deviceFormOpen}
+        onOpenChange={setDeviceFormOpen}
+        deviceId={selectedDeviceId}
+        onSubmit={handleDeviceFormSubmit}
+        isLoadingAction={createDevice.isPending || updateDevice.isPending}
+        branchId={branch.id}
+        showAreaSelect={true}
+        schema={selectedDeviceId ? updateDeviceSchema : createDeviceSchema}
       />
 
       <ConfirmDialog
@@ -445,6 +557,27 @@ export function BranchDetailPage() {
         confirmLabel={toggleAreaDialog?.isActive ? 'Desactivar' : 'Activar'}
         variant={toggleAreaDialog?.isActive ? 'destructive' : 'default'}
         loading={activateArea.isPending || deactivateArea.isPending}
+      />
+
+      <ConfirmDialog
+        open={!!toggleDeviceDialog}
+        onOpenChange={(open) => !open && setToggleDeviceDialog(null)}
+        title={
+          toggleDeviceDialog
+            ? `¿${toggleDeviceDialog.isActive ? 'Desactivar' : 'Activar'} el dispositivo ${toggleDeviceDialog.deviceName}?`
+            : ''
+        }
+        description={
+          toggleDeviceDialog
+            ? toggleDeviceDialog.isActive
+              ? `Al desactivar "${toggleDeviceDialog.deviceName}", el equipo perderá conexión con la plataforma, se cerrará su sesión y dejará de reproducir el contenido asignado.`
+              : `Al activar "${toggleDeviceDialog.deviceName}", el equipo recuperará el acceso a la plataforma y reanudará la sincronización de su playlist.`
+            : ''
+        }
+        onConfirm={handleConfirmToggleDevice}
+        confirmLabel={toggleDeviceDialog?.isActive ? 'Desactivar' : 'Activar'}
+        variant={toggleDeviceDialog?.isActive ? 'destructive' : 'default'}
+        loading={activateDevice.isPending || deactivateDevice.isPending}
       />
     </div>
   )

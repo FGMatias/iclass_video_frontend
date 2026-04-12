@@ -82,8 +82,6 @@ export function UserPage() {
   const [deleteDialog, setDeleteDialog] = useState<UserResponse | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
-  console.log({ user })
-
   const filteredUsers =
     statusFilter === 'all'
       ? users
@@ -295,6 +293,7 @@ export function UserPage() {
         onOpenChange={(open) => !open && setReassignUserBranch(null)}
         user={reassignUserBranch}
         onConfirm={handleReassignBranch}
+        companyId={companyId}
         loading={reassignBranch.isPending}
       />
 

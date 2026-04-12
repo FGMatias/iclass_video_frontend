@@ -1,27 +1,47 @@
 import { toUpdateArea } from '@/adapters/area.adapter'
+import { toCreateDevice, toUpdateDevice } from '@/adapters/device.adapter'
+import { DeviceForm, DeviceTable } from '@/components/features/device'
+import { CurrentPlaylistCard, PlaylistForm } from '@/components/features/playlist'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { ROUTES } from '@/constants/routes'
-import {
-  useActivateArea,
-  useDeactivateArea,
-  useDetailArea,
-  useUpdateArea,
-} from '@/hooks/queries/useArea'
+import { useDetailArea, useUpdateArea } from '@/hooks/queries/useArea'
 import { useSyncPlaylist } from '@/hooks/queries/useAreaVideo'
+import {
+  useActivateDevice,
+  useCreateDevice,
+  useDeactivateDevice,
+  useUpdateDevice,
+} from '@/hooks/queries/useDevice'
 import { useVideos } from '@/hooks/queries/useVideo'
 import { buildRoute } from '@/lib/route-builder'
 import type { UpdateAreaFormData } from '@/schemas/area.schema'
+import {
+  createDeviceSchema,
+  updateDeviceSchema,
+  type CreateDeviceFormData,
+  type UpdateDeviceFormData,
+} from '@/schemas/device.schema'
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
-import type { AreaDetail } from '@/types/area.types'
+import type { AreaResponse } from '@/types/area.types'
+import type { DeviceInfo } from '@/types/device.types'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { ArrowLeft, Calendar, LayoutDashboard, Loader2, Pencil, Plus } from 'lucide-react'
+import {
+  ArrowLeft,
+  Calendar,
+  LayoutDashboard,
+  Loader2,
+  Pencil,
+  Plus,
+  ShieldCheck,
+  ShieldOff,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CurrentPlaylistCard } from '../playlist/CurrentPlaylistCard'
-import { PlaylistForm } from '../playlist/PlaylistForm'
 import { AreaForm } from './AreaForm'
 
 export function AreaDetailPage() {
@@ -36,47 +56,93 @@ export function AreaDetailPage() {
   const { data: companyVideos = [] } = useVideos(area?.companyId)
   const syncPlaylist = useSyncPlaylist(areaId!)
   const updateArea = useUpdateArea()
-  const activateArea = useActivateArea()
-  const deactivateArea = useDeactivateArea()
   const serverPlaylist = area?.playlist ?? []
+  const createDevice = useCreateDevice({ areaId })
+  const updateDevice = useUpdateDevice({ areaId })
+  const activateDevice = useActivateDevice({ areaId })
+  const deactivateDevice = useDeactivateDevice({ areaId })
   const [areaFormOpen, setAreaFormOpen] = useState(false)
-  const [toggleDialog, setToggleDialog] = useState<AreaDetail | null>(null)
+  const [selectedArea, setSelectedArea] = useState<AreaResponse | null>(null)
   const [playlistFormOpen, setPlaylistFormOpen] = useState(false)
-  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
   const currentPlaylistIds = serverPlaylist.map((v) => v.id)
   const playlistKey = serverPlaylist.map((v) => v.id).join('-')
+  const [deviceFormOpen, setDeviceFormOpen] = useState(false)
+  const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null)
+  const [toggleDeviceDialog, setToggleDeviceDialog] = useState<DeviceInfo | null>(null)
+  const setCustomBreadcrumbs = useBreadcrumbStore((state) => state.setCustomBreadcrumbs)
 
   useEffect(() => {
     if (area?.name) {
-      setCustomBreadcrumbs([
-        { label: 'Sucursal', path: ROUTES.COMPANY_ADMINISTRATOR.BRANCH },
-        {
-          label: area.branchName,
-          path: buildRoute(ROUTES.COMPANY_ADMINISTRATOR.BRANCH_DETAIL, {
-            branchId: branchId ?? '',
-          }),
-        },
-        { label: area.name },
-      ])
+      if (paramBranchId) {
+        setCustomBreadcrumbs([
+          { label: 'Sucursal', path: ROUTES.COMPANY_ADMINISTRATOR.BRANCH },
+          {
+            label: area.branchName,
+            path: buildRoute(ROUTES.COMPANY_ADMINISTRATOR.BRANCH_DETAIL, {
+              branchId: branchId ?? '',
+            }),
+          },
+          { label: area.name },
+        ])
+      } else {
+        setCustomBreadcrumbs([
+          {
+            label: 'Áreas',
+            path: ROUTES.BRANCH_ADMINISTRATOR.AREA,
+          },
+          { label: area.name },
+        ])
+      }
     }
     return () => setCustomBreadcrumbs(null)
   }, [area?.name, setCustomBreadcrumbs])
 
-  const handleEditArea = () => setAreaFormOpen(true)
+  const handleEditArea = (area: AreaResponse) => {
+    setSelectedArea(area)
+    setAreaFormOpen(true)
+  }
+
+  const handleEditDevice = (device: DeviceInfo) => {
+    setSelectedDeviceId(device.id)
+    setDeviceFormOpen(true)
+  }
 
   const handleAreaFormSubmit = (data: UpdateAreaFormData) => {
-    if (area) {
-      const payload = toUpdateArea(data, area)
-      updateArea.mutate({ id: area.id, data: payload }, { onSuccess: () => setAreaFormOpen(false) })
+    if (selectedArea) {
+      const payload = toUpdateArea(data, selectedArea)
+      updateArea.mutate(
+        { id: selectedArea.id, data: payload },
+        { onSuccess: () => setAreaFormOpen(false) },
+      )
     }
   }
 
-  const handleConfirmToggle = () => {
-    if (!toggleDialog) return
-    if (toggleDialog.isActive) {
-      deactivateArea.mutate({ id: toggleDialog.id }, { onSuccess: () => setToggleDialog(null) })
+  const handleDeviceFormSubmit = (data: CreateDeviceFormData | UpdateDeviceFormData) => {
+    if (selectedDeviceId) {
+      const payload = toUpdateDevice(data as UpdateDeviceFormData)
+      updateDevice.mutate(
+        { id: selectedDeviceId, data: payload },
+        { onSuccess: () => setDeviceFormOpen(false) },
+      )
+      return
+    }
+
+    const payload = toCreateDevice(data as CreateDeviceFormData)
+    createDevice.mutate({ data: payload }, { onSuccess: () => setDeviceFormOpen(false) })
+  }
+
+  const handleConfirmToggleDevice = () => {
+    if (!toggleDeviceDialog) return
+    if (toggleDeviceDialog.isActive) {
+      deactivateDevice.mutate(
+        { id: toggleDeviceDialog.id },
+        { onSuccess: () => setToggleDeviceDialog(null) },
+      )
     } else {
-      activateArea.mutate({ id: toggleDialog.id }, { onSuccess: () => setToggleDialog(null) })
+      activateDevice.mutate(
+        { id: toggleDeviceDialog.id },
+        { onSuccess: () => setToggleDeviceDialog(null) },
+      )
     }
   }
 
@@ -167,7 +233,7 @@ export function AreaDetailPage() {
             </div>
 
             <div className="border-border mt-auto border-t pt-4">
-              <Button variant="outline" className="h-9 w-full" onClick={handleEditArea}>
+              <Button variant="outline" className="h-9 w-full" onClick={() => handleEditArea(area)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Editar Información
               </Button>
@@ -183,21 +249,49 @@ export function AreaDetailPage() {
         />
       </div>
 
-      <Card className="shadow-sm">
-        <CardHeader className="border-border/40 flex flex-row items-center justify-between border-b pb-4">
-          <div className="space-y-1">
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+          <div>
             <CardTitle className="text-lg">Dispositivos Conectados</CardTitle>
-            <CardDescription>Gestión de pantallas y tablets en esta área.</CardDescription>
+            <CardDescription>Gestión de dispositivos registrados en el área.</CardDescription>
           </div>
-          <Button size="sm">
+          <Button
+            onClick={() => {
+              setSelectedDeviceId(null)
+              setDeviceFormOpen(true)
+            }}
+          >
             <Plus className="mr-2 size-4" />
-            Agregar Dispositivo
+            Nuevo Dispositivo
           </Button>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="text-muted-foreground bg-muted/10 p-8 text-center text-sm">
-            Tabla de dispositivos (En construcción...)
-          </div>
+        <CardContent className="pt-0">
+          <DeviceTable
+            data={area.devices || []}
+            isLoading={false}
+            showAreaColumn={false}
+            renderActions={(device) => (
+              <>
+                <DropdownMenuItem onClick={() => handleEditDevice(device)}>
+                  <Pencil className="mr-2 size-4" />
+                  Editar
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setToggleDeviceDialog(device)}>
+                  {device.isActive ? (
+                    <>
+                      <ShieldOff className="text-destructive mr-2 size-4" />
+                      <span className="text-destructive">Desactivar</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="mr-2 size-4" /> Activar
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </>
+            )}
+          />
         </CardContent>
       </Card>
 
@@ -218,6 +312,38 @@ export function AreaDetailPage() {
         onConfirm={handleSyncPlaylist}
         isLoading={syncPlaylist.isPending}
         companyId={area.companyId}
+      />
+
+      <DeviceForm
+        open={deviceFormOpen}
+        onOpenChange={setDeviceFormOpen}
+        deviceId={selectedDeviceId}
+        onSubmit={handleDeviceFormSubmit}
+        isLoadingAction={createDevice.isPending || updateDevice.isPending}
+        branchId={area.branchId}
+        showAreaSelect={true}
+        schema={selectedDeviceId ? updateDeviceSchema : createDeviceSchema}
+      />
+
+      <ConfirmDialog
+        open={!!toggleDeviceDialog}
+        onOpenChange={(open) => !open && setToggleDeviceDialog(null)}
+        title={
+          toggleDeviceDialog
+            ? `¿${toggleDeviceDialog.isActive ? 'Desactivar' : 'Activar'} el dispositivo ${toggleDeviceDialog.deviceName}?`
+            : ''
+        }
+        description={
+          toggleDeviceDialog
+            ? toggleDeviceDialog.isActive
+              ? `Al desactivar "${toggleDeviceDialog.deviceName}", el equipo perderá conexión con la plataforma, se cerrará su sesión y dejará de reproducir el contenido asignado.`
+              : `Al activar "${toggleDeviceDialog.deviceName}", el equipo recuperará el acceso a la plataforma y reanudará la sincronización de su playlist.`
+            : ''
+        }
+        onConfirm={handleConfirmToggleDevice}
+        confirmLabel={toggleDeviceDialog?.isActive ? 'Desactivar' : 'Activar'}
+        variant={toggleDeviceDialog?.isActive ? 'destructive' : 'default'}
+        loading={activateDevice.isPending || deactivateDevice.isPending}
       />
     </div>
   )

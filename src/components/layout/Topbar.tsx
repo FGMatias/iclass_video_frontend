@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useTheme } from '@/hooks/useTheme'
 import { useBreadcrumbStore } from '@/stores/breadcrumb.store'
-import { Bell, Moon, Sun } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import React from 'react'
 import { Link, useMatches } from 'react-router-dom'
 
@@ -74,9 +74,6 @@ export function Topbar() {
         <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {theme === 'light' ? <Moon className="size-4" /> : <Sun className="size-4" />}
           <span className="sr-only">Cambiar tema</span>
-        </Button>
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Bell className="size-4" />
         </Button>
       </div>
     </header>
