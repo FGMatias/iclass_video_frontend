@@ -1,14 +1,18 @@
 import api from '@/lib/axios'
-import type { CreateDeviceFormData } from '@/schemas/device.schema'
-import type { CreateDeviceRequest, DeviceResponse, UpdateDeviceRequest } from '@/types/device.types'
+import type {
+  CreateDeviceRequest,
+  DeviceInfo,
+  DeviceResponse,
+  UpdateDeviceRequest,
+} from '@/types/device.types'
 
 export const deviceService = {
-  findAll: async (branchId?: number, areaId?: number): Promise<DeviceResponse[]> => {
+  findAll: async (branchId?: number, areaId?: number): Promise<DeviceInfo[]> => {
     const params: Record<string, number> = {}
     if (areaId) params.areaId = areaId
     else if (branchId) params.branchId = branchId
 
-    const response = await api.get<DeviceResponse[]>('/device', {
+    const response = await api.get<DeviceInfo[]>('/device', {
       params: Object.keys(params).length > 0 ? params : undefined,
     })
 
@@ -40,5 +44,9 @@ export const deviceService = {
 
   deactivate: async (id: number): Promise<void> => {
     await api.put(`/device/${id}/deactivate`)
+  },
+
+  reassign: async (deviceId: number, areaId: number): Promise<void> => {
+    await api.put(`/device/${deviceId}/reassign`, { areaId })
   },
 }

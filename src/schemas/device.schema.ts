@@ -12,12 +12,6 @@ export const createDeviceSchema = z.object({
     .max(50, 'El username no debe exceder los 50 caracteres')
     .regex(/^[a-zA-Z0-9_-]+$/, 'Solo letras, números, puntos y guiones'),
   areaId: z.number({ required_error: 'El área es obligatoria' }),
-  notes: z
-    .string()
-    .max(500, 'Las notas no deben exceder los 500 caracteres')
-    .optional()
-    .or(z.literal(''))
-    .transform((val) => (val === '' ? undefined : val)),
 })
 
 export type CreateDeviceFormData = z.infer<typeof createDeviceSchema>

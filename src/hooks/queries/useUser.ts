@@ -11,7 +11,7 @@ import { useAuth } from '../useAuth'
 import { BRANCH_DETAIL_KEY } from './useBranch'
 import { COMPANY_DETAIL_KEY } from './useCompany'
 
-interface UserQueryOptions {
+interface UserQueryParams {
   companyId?: number
   branchId?: number
 }
@@ -73,7 +73,7 @@ export function useCreateBranchAdmin(branchId?: number) {
   })
 }
 
-export function useUpdateUser(options: UserQueryOptions = {}) {
+export function useUpdateUser(options: UserQueryParams = {}) {
   const qc = useQueryClient()
   const { companyId, branchId } = options
 
@@ -109,7 +109,7 @@ export function useDeleteUser() {
   })
 }
 
-export function useActivateUser(options: UserQueryOptions = {}) {
+export function useActivateUser(options: UserQueryParams = {}) {
   const qc = useQueryClient()
   const { companyId, branchId } = options
 
@@ -126,7 +126,7 @@ export function useActivateUser(options: UserQueryOptions = {}) {
   })
 }
 
-export function useDeactivateUser(options: UserQueryOptions = {}) {
+export function useDeactivateUser(options: UserQueryParams = {}) {
   const qc = useQueryClient()
   const { companyId, branchId } = options
 

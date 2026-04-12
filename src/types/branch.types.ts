@@ -1,4 +1,5 @@
 import type { AreaResponse } from './area.types'
+import type { DeviceInfo } from './device.types'
 import type { UserResponse } from './user.types'
 
 export interface BranchResponse {
@@ -16,6 +17,7 @@ export interface BranchResponse {
 export interface BranchDetail extends BranchResponse {
   administrators: UserResponse[]
   areas: AreaResponse[]
+  devices: DeviceInfo[]
 }
 
 export interface CreateBranchRequest {

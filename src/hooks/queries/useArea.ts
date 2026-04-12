@@ -45,8 +45,9 @@ export function useUpdateArea(branchId?: number) {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateAreaRequest }) =>
       areaService.update(id, data),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: AREAS_KEYS })
+      qc.invalidateQueries({ queryKey: [AREA_DETAIL_KEY, variables.id] })
       toast.success('Área editada correctamente')
 
       if (branchId) {
@@ -57,7 +58,7 @@ export function useUpdateArea(branchId?: number) {
   })
 }
 
-export function useDeleteBranch() {
+export function useDeleteArea() {
   const qc = useQueryClient()
 
   return useMutation({
@@ -70,7 +71,7 @@ export function useDeleteBranch() {
   })
 }
 
-export function useActivateArea() {
+export function useActivateArea(branchId?: number) {
   const qc = useQueryClient()
 
   return useMutation({
@@ -78,12 +79,16 @@ export function useActivateArea() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: AREAS_KEYS })
       toast.success('Área activada correctamente')
+
+      if (branchId) {
+        qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
+      }
     },
     onError: () => toast.error('Error al activar el área'),
   })
 }
 
-export function useDeactivateArea() {
+export function useDeactivateArea(branchId?: number) {
   const qc = useQueryClient()
 
   return useMutation({
@@ -91,6 +96,10 @@ export function useDeactivateArea() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: AREAS_KEYS })
       toast.success('Área desactivada correctamente')
+
+      if (branchId) {
+        qc.invalidateQueries({ queryKey: [BRANCH_DETAIL_KEY, branchId] })
+      }
     },
     onError: () => toast.error('Error al desactivar el área'),
   })

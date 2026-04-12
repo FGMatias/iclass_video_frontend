@@ -22,6 +22,7 @@ export interface DeviceInfo {
   id: number
   deviceName: string
   deviceUsername: string
+  currentAreaName: string | null
   deviceType: string
   isActive: boolean
   lastLogin: string
@@ -40,5 +41,5 @@ export interface UpdateDeviceRequest {
   deviceName: string
   deviceTypeId: number
   deviceUsername: string
-  isActive: boolean
+  isActive?: boolean
 }
