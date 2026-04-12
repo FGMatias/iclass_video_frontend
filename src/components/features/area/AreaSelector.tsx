@@ -85,7 +85,7 @@ export function AreaSelector({ value, onChange, error, disabled, branchId }: Are
           type="button"
           className="text-primary font-medium hover:underline"
           onClick={() => setModalOpen(true)}
-          disabled={!disabled}
+          disabled={disabled}
         >
           Crear Área
         </button>

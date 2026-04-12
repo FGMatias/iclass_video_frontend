@@ -174,7 +174,9 @@ export function UserForm({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Correo</Label>
+                <Label htmlFor="email">
+                  Correo <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="email"
                   type="email"
